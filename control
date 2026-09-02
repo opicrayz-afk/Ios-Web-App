@@ -1,0 +1,9 @@
+Package: com.crayz.keystorepro
+Name: Crayz Key Store Pro
+Version: 1.0.0
+Architecture: iphoneos-arm
+Description: WKWebView client for Crayz Key Store Pro.
+Maintainer: Crayz Key Store Pro Maintainer
+Author: Crayz Key Store Pro Maintainer
+Section: Utilities
+Depends: firmware (>= 13.0)
