@@ -162,3 +162,11 @@ On rootless jailbreaks, use the DEB file built with the `rootless` scheme; do no
 ```bash
 ./build.sh /path-to/index.html
 ```
+
+------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+# Giấy phép
+Copyright © 2026 # opicrayz-afk 
+
+Phát hành theo [GNU General Public License](https://www.gnu.org/licenses/gpl-3.0.html) v3.0 (GPL-3.0).
+Fork / phân phối phải tuân thủ GPL (công khai mã nguồn tương ứng). Chi tiết: [LICENSE](https://github.com/opicrayz-afk/Web-Ios-App-/blob/main/LICENSE).
