@@ -1,9 +1,9 @@
-Package: com.crayz.keystorepro
-Name: Crayz Key Store Pro
+Package: Your Bundle Id
+Name: Your App Name
 Version: 1.0.0
 Architecture: iphoneos-arm
-Description: WKWebView client for Crayz Key Store Pro.
-Maintainer: Crayz Key Store Pro Maintainer
-Author: Crayz Key Store Pro Maintainer
+Description: Your Description
+Maintainer: Your Name
+Author: Your Name
 Section: Utilities
 Depends: firmware (>= 13.0)
