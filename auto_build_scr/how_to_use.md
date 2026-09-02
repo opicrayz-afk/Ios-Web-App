@@ -36,9 +36,9 @@ Tool hỏi bạn có muốn đổi trang báo lỗi (khi mất mạng) không. N
 ## 4. Cấp quyền Apple (Permissions):
 Tool sẽ lần lượt hỏi bạn 8 quyền phổ biến nhất (*`Camera, Mic, Ảnh, Vị trí, FaceID, Bluetooth, Danh bạ, Lịch`*).
 
-Nếu web của bạn không dùng tính năng nào, hãy gõ `n` (No) để bỏ qua (giúp app sạch hơn, không bị Apple nghi ngờ thu thập dữ liệu).
+Nếu web của bạn không dùng tính năng nào, hãy gõ `n` **(No)** để bỏ qua (giúp app sạch hơn, không bị Apple nghi ngờ thu thập dữ liệu).
 
-Nếu web của bạn có dùng tính năng đó, gõ `y` (Yes). Sau đó tool sẽ yêu cầu bạn nhập Lý do. Hãy nhập một câu ngắn gọn (VD: "*`Ứng dụng cần dùng camera để quét mã QR`*"). Câu này sẽ hiện lên màn hình iPhone khi app xin quyền người dùng.
+Nếu web của bạn có dùng tính năng đó, gõ `y` **(Yes)**. Sau đó tool sẽ yêu cầu bạn nhập Lý do. Hãy nhập một câu ngắn gọn (VD: "*`Ứng dụng cần dùng camera để quét mã QR`*"). Câu này sẽ hiện lên màn hình iPhone khi app xin quyền người dùng.
 
 ## 5. Tùy chọn Build:
 
@@ -89,9 +89,9 @@ The tool asks if you want to change the error page (when offline). If you choose
 ## 4. Apple Permissions:
 The tool will ask you about 8 of the most common permissions (*`Camera, Microphone, Photos, Location, FaceID, Bluetooth, Contacts, Calendar`*).
 
-If your website does not use a certain feature, type `n` (No) to skip it (this keeps the app cleaner and avoids Apple's suspicion of data collection).
+If your website does not use a certain feature, type `n` **(No)** to skip it (this keeps the app cleaner and avoids Apple's suspicion of data collection).
 
-If your website does use that feature, type `y` (Yes). The tool will then ask you to enter a Reason. Provide a short sentence (e.g., "*`The app needs to use the camera to scan QR codes`*"). This sentence will appear on the iPhone screen when the app requests user permission.
+If your website does use that feature, type `y` **(Yes)**. The tool will then ask you to enter a Reason. Provide a short sentence (e.g., "*`The app needs to use the camera to scan QR codes`*"). This sentence will appear on the iPhone screen when the app requests user permission.
 
 ## 5. Build Options:
 **Build DEB:** Choose `y` if you want to create a file for *`Jailbroken devices`*.
