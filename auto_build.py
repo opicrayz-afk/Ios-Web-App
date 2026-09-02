@@ -64,7 +64,6 @@ TEXTS = {
     }
 }
 
-# Đã hấp thụ toàn bộ code cấu hình AVAudioSession và Check NotDetermined của bạn
 PERM_DATA = {
     'Camera': {
         'plist': ['NSCameraUsageDescription'],
@@ -114,7 +113,8 @@ PERM_DATA = {
         'plist': ['NSCalendarsUsageDescription'],
         'frameworks': ['EventKit'],
         'imports': ['<EventKit/EventKit.h>'],
-        'code': 'EKEventStore *eventStore = [[EKEventStore alloc] init];\n    [eventStore requestAccessToEntityType:EKEntityTypeEvent completionHandler:^(BOOL granted, NSError * _Nullable error) {}];'
+        # Đã sửa completionHandler thành completion theo đúng API của EventKit
+        'code': 'EKEventStore *eventStore = [[EKEventStore alloc] init];\n    [eventStore requestAccessToEntityType:EKEntityTypeEvent completion:^(BOOL granted, NSError * _Nullable error) {}];'
     }
 }
 
@@ -261,25 +261,25 @@ def main():
 
         with open("Info.plist", "wb") as f: plistlib.dump(p_dict, f)
 
-    # 5. Inject Objective-C Code vào ViewController.m
+    # 5. Inject Objective-C Code
     if os.path.exists("ViewController.m"):
         with open("ViewController.m", "r", encoding="utf-8") as f: vc_data = f.read()
             
         vc_data = re.sub(r'static NSString \* const kStartURL = @".*";', f'static NSString * const kStartURL = @"{web_url}";', vc_data)
         vc_data = re.sub(r'\[origin\.host caseInsensitiveCompare:@".*?"\]', f'[origin.host caseInsensitiveCompare:@"{domain}"]', vc_data)
 
-        # 5.0 TỰ ĐỘNG XÓA CODE CŨ ĐỂ TRÁNH TRÙNG LẶP
+        # 5.0 Auto-remove legacy code
         vc_data = re.sub(r'\s*\[self requestMediaPermissionsIfNeeded\];', '', vc_data)
         vc_data = re.sub(r'- \(void\)requestMediaPermissionsIfNeeded\s*\{.*?\n\}\n*(?=-|\@end)', '', vc_data, flags=re.DOTALL)
 
-        # 5.1 Xử lý Imports
+        # 5.1 Handle Imports
         import_block = "// --- AUTO_INJECT_IMPORTS_START ---\n" + "\n".join([f"#import {i}" for i in needed_imports]) + "\n// --- AUTO_INJECT_IMPORTS_END ---\n"
         if "// --- AUTO_INJECT_IMPORTS_START ---" in vc_data:
             vc_data = re.sub(r"// --- AUTO_INJECT_IMPORTS_START ---.*?// --- AUTO_INJECT_IMPORTS_END ---\n?", import_block if needed_imports else "", vc_data, flags=re.DOTALL)
         elif needed_imports:
             vc_data = re.sub(r'(#import "ViewController\.h"|#import <UIKit/UIKit\.h>)', r'\1\n' + import_block, vc_data, count=1)
 
-        # 5.2 Xử lý Interface
+        # 5.2 Handle Interface
         interface_content = "\n".join(needed_interfaces)
         interface_block = f"// --- AUTO_INJECT_INTERFACE_START ---\n@interface ViewController ()\n{interface_content}\n@end\n// --- AUTO_INJECT_INTERFACE_END ---\n"
         if "// --- AUTO_INJECT_INTERFACE_START ---" in vc_data:
@@ -287,7 +287,7 @@ def main():
         elif needed_interfaces:
             vc_data = re.sub(r'(@implementation ViewController)', interface_block + r'\n\1', vc_data, count=1)
 
-        # 5.3 Xử lý Method
+        # 5.3 Handle Method
         method_content = "\n    ".join(needed_codes)
         method_block = f"// --- AUTO_INJECT_METHOD_START ---\n- (void)requestAllPermissions {{\n    {method_content}\n}}\n// --- AUTO_INJECT_METHOD_END ---\n"
         if "// --- AUTO_INJECT_METHOD_START ---" in vc_data:
@@ -295,7 +295,7 @@ def main():
         elif needed_codes:
             vc_data = re.sub(r'(@implementation ViewController)', r'\1\n' + method_block, vc_data, count=1)
 
-        # 5.4 Chèn lời gọi hàm vào viewDidLoad
+        # 5.4 Call inside viewDidLoad
         call_stmt = "    [self requestAllPermissions]; // AUTO_INJECT_CALL"
         if "// AUTO_INJECT_CALL" not in vc_data and needed_codes:
             vc_data = re.sub(r'(- \(void\)viewDidLoad\s*\{)', r'\1\n' + call_stmt, vc_data, count=1)
