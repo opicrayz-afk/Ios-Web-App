@@ -1,5 +1,5 @@
-Package: Your Bundle Id
-Name: Your App Name
+Package: YourBundleId
+Name: YourAppName
 Version: 1.0.0
 Architecture: iphoneos-arm
 Description: Your Description
