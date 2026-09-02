@@ -85,7 +85,6 @@ def main():
     lang = 'en' if lang_choice == '2' else 'vi'
     t = TEXTS[lang]
 
-    # Kiểm tra biến THEOS trước khi làm bất cứ điều gì
     if not os.environ.get("THEOS"):
         print_banner(t['err_theos'])
         sys.exit(1)
@@ -143,7 +142,16 @@ def main():
     if os.path.exists("Makefile"):
         with open("Makefile", "r", encoding="utf-8") as f:
             m_data = f.read()
+        
+        # Cập nhật tên ứng dụng và tự động đổi cả các biến tiền tố trong Makefile (ví dụ: YourAppName_FILES thành hmmm_FILES)
         m_data = re.sub(r"APPLICATION_NAME\s*=\s*.*", f"APPLICATION_NAME = {app_name_nospace}", m_data)
+        m_data = re.sub(r"^[a-zA-Z0-9]+_FILES", f"{app_name_nospace}_FILES", m_data, flags=re.MULTILINE)
+        m_data = re.sub(r"^[a-zA-Z0-9]+_FRAMEWORKS", f"{app_name_nospace}_FRAMEWORKS", m_data, flags=re.MULTILINE)
+        m_data = re.sub(r"^[a-zA-Z0-9]+_CFLAGS", f"{app_name_nospace}_CFLAGS", m_data, flags=re.MULTILINE)
+        m_data = re.sub(r"^[a-zA-Z0-9]+_BUNDLE_RESOURCES", f"{app_name_nospace}_BUNDLE_RESOURCES", m_data, flags=re.MULTILINE)
+        m_data = re.sub(r"^[a-zA-Z0-9]+_BUNDLE_RESOURCE_DIRS", f"{app_name_nospace}_BUNDLE_RESOURCE_DIRS", m_data, flags=re.MULTILINE)
+        m_data = re.sub(r"^[a-zA-Z0-9]+_INSTALL_PATH", f"{app_name_nospace}_INSTALL_PATH", m_data, flags=re.MULTILINE)
+
         with open("Makefile", "w", encoding="utf-8") as f:
             f.write(m_data)
 
@@ -184,6 +192,10 @@ def main():
         os.makedirs("Resources", exist_ok=True)
         with open("Resources/index.html", "w", encoding="utf-8") as f:
             f.write(html_content)
+
+    if not os.path.exists("Makefile"):
+        print_banner("❌ LỖI: Không tìm thấy file 'Makefile'!")
+        sys.exit(1)
 
     try:
         subprocess.run(["make", "clean"], check=True)
