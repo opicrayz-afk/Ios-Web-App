@@ -24,7 +24,7 @@ include $(THEOS_MAKE_PATH)/application.mk
 
 # IPA package: make ipa SIGN_IDENTITY="Apple Distribution: Your Name (TEAMID)" \
 #                         PROVISIONING_PROFILE=/absolute/path/profile.mobileprovision
-IPA_NAME = CrayzKeyStorePro.ipa
+IPA_NAME = $(APPLICATION_NAME).ipa
 IPA_DIR = .theos/ipa
 IPA_APP = $(IPA_DIR)/Payload/$(APPLICATION_NAME).app
 IPA_OUTPUT = packages/$(IPA_NAME)
