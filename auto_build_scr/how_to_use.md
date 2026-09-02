@@ -3,7 +3,7 @@ Công cụ này giúp bạn thiết lập và xuất file ứng dụng (IPA/DEB)
 Bước chuẩn bị
 Đảm bảo bạn đã cài đặt Python 3 trên máy tính/máy ảo (macOS hoặc WSL).
 
-Đảm bảo đã đặt biến môi trường '$THEOS' thành công.
+Đảm bảo đã đặt biến môi trường `$THEOS` thành công.
 
 Mở Terminal, trỏ đường dẫn ('cd') vào thư mục gốc của project (nơi chứa file 'auto_build.py').
 
