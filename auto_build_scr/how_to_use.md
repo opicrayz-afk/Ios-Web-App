@@ -27,7 +27,7 @@ Tool sẽ yêu cầu bạn nhập *`1`* **(Tiếng Việt)** hoặc *`2`* **(Eng
 **Link Website:** URL trang web bạn muốn biến thành app (VD: *`https://cuahang.com`*).
 
 ## 3. Tùy chỉnh trang HTML Offline:
-Tool hỏi bạn có muốn đổi trang báo lỗi (khi mất mạng) không. Nếu chọn `y` (Yes), bạn có *`2`* cách:
+Tool hỏi bạn có muốn đổi trang báo lỗi (khi mất mạng) không. Nếu chọn `y` **(Yes)**, bạn có *`2`* cách:
 
 **Cách 1 (Đường dẫn file):** Kéo thả file `.html` có sẵn trong máy bạn vào Terminal (hoặc nhập đường dẫn như *`/Users/name/Desktop/index.html`*).
 
@@ -45,6 +45,7 @@ Nếu web của bạn có dùng tính năng đó, gõ `y` **(Yes)**. Sau đó to
 **Build DEB:** Chọn `y` nếu bạn muốn tạo file cho *`máy đã Jailbreak`*.
 
 **Build IPA:** Chọn `y` nếu bạn muốn tạo file cài qua *`TrollStore / Sideloadly`*.
+
 (Bạn có thể chọn `y` cho cả *`2`* nếu muốn tạo đồng thời).
 
 ## 6. Hoàn tất:
@@ -80,7 +81,7 @@ The tool will ask you to enter *`1`* **(Vietnamese)** or *`2`* **(English)**.
 **Website Link:** The URL of the website you want to turn into an app (e.g., *`https://mystore.com`*).
 
 ## 3. Customize the offline HTML page:
-The tool asks if you want to change the error page (when offline). If you choose `y` (Yes), you have *`2`* options:
+The tool asks if you want to change the error page (when offline). If you choose `y` **(Yes)**, you have *`2`* options:
 
 **Option 1 (File path):** Drag and drop an `.html` file from your computer into the Terminal (or enter the path like *`/Users/name/Desktop/index.html`*).
 
@@ -97,6 +98,7 @@ If your website does use that feature, type `y` **(Yes)**. The tool will then as
 **Build DEB:** Choose `y` if you want to create a file for *`Jailbroken devices`*.
 
 **Build IPA:** Choose `y` if you want to create a file for installation via *`TrollStore / Sideloadly`*.
+
 (You can choose `y` for *`both`* if you want to generate them simultaneously).
 
 ## 6. Completion:
