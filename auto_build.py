@@ -75,7 +75,8 @@ PERM_DATA = {
         'plist': ['NSMicrophoneUsageDescription'],
         'frameworks': ['AVFoundation'],
         'imports': ['<AVFoundation/AVFoundation.h>'],
-        'code': 'AVAudioSession *audioSession = [AVAudioSession sharedInstance];\n    NSError *error = nil;\n    [audioSession setCategory:AVAudioSessionCategoryPlayAndRecord withOptions:AVAudioSessionCategoryOptionDefaultToSpeaker error:&error];\n    [audioSession setActive:YES error:&error];\n    if (audioSession.recordPermission == AVAudioSessionRecordPermissionUndetermined) {\n        [audioSession requestRecordPermission:^(BOOL granted) {}];\n    }'
+        # Đã đổi tên biến error thành audioError để tránh xung đột
+        'code': 'AVAudioSession *audioSession = [AVAudioSession sharedInstance];\n    NSError *audioError = nil;\n    [audioSession setCategory:AVAudioSessionCategoryPlayAndRecord withOptions:AVAudioSessionCategoryOptionDefaultToSpeaker error:&audioError];\n    [audioSession setActive:YES error:&audioError];\n    if (audioSession.recordPermission == AVAudioSessionRecordPermissionUndetermined) {\n        [audioSession requestRecordPermission:^(BOOL granted) {}];\n    }'
     },
     'Photo Library': {
         'plist': ['NSPhotoLibraryUsageDescription', 'NSPhotoLibraryAddUsageDescription'],
@@ -94,7 +95,8 @@ PERM_DATA = {
         'plist': ['NSFaceIDUsageDescription'],
         'frameworks': ['LocalAuthentication'],
         'imports': ['<LocalAuthentication/LocalAuthentication.h>'],
-        'code': 'LAContext *context = [[LAContext alloc] init];\n    NSError *error = nil;\n    [context canEvaluatePolicy:LAPolicyDeviceOwnerAuthenticationWithBiometrics error:&error];'
+        # Đã đổi tên biến error thành authError để tránh xung đột
+        'code': 'LAContext *context = [[LAContext alloc] init];\n    NSError *authError = nil;\n    [context canEvaluatePolicy:LAPolicyDeviceOwnerAuthenticationWithBiometrics error:&authError];'
     },
     'Bluetooth': {
         'plist': ['NSBluetoothAlwaysUsageDescription', 'NSBluetoothPeripheralUsageDescription'],
@@ -113,7 +115,6 @@ PERM_DATA = {
         'plist': ['NSCalendarsUsageDescription'],
         'frameworks': ['EventKit'],
         'imports': ['<EventKit/EventKit.h>'],
-        # Đã sửa completionHandler thành completion theo đúng API của EventKit
         'code': 'EKEventStore *eventStore = [[EKEventStore alloc] init];\n    [eventStore requestAccessToEntityType:EKEntityTypeEvent completion:^(BOOL granted, NSError * _Nullable error) {}];'
     }
 }
