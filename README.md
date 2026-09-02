@@ -1,4 +1,4 @@
-# Web Ios App — Theos application
+# Ios Web App — Theos application
 
 Ứng dụng iOS 13+ dùng `WKWebView`. Khi có mạng, nó mở `https://linkwebsitecuaban`; nếu tải trang thất bại, nó dùng `Resources/index.html` trong bundle.
 
@@ -81,7 +81,7 @@ Trên jailbreak rootless, dùng file DEB đã build với scheme `rootless`, kh�
 
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-# Web Ios App — Theos application
+# Ios Web App — Theos application
 
 An iOS 13+ application using `WKWebView`. When online, it loads `https://yourwebsitelink`; if the page fails to load, it falls back to `Resources/index.html` within the bundle.
 
