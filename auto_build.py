@@ -64,25 +64,25 @@ TEXTS = {
     }
 }
 
-# Mapping Permissions to iOS Frameworks & Objective-C Code
+# Đã hấp thụ toàn bộ code cấu hình AVAudioSession và Check NotDetermined của bạn
 PERM_DATA = {
     'Camera': {
         'plist': ['NSCameraUsageDescription'],
         'frameworks': ['AVFoundation'],
         'imports': ['<AVFoundation/AVFoundation.h>'],
-        'code': '[AVCaptureDevice requestAccessForMediaType:AVMediaTypeVideo completionHandler:^(BOOL granted) {}];'
+        'code': 'if ([AVCaptureDevice authorizationStatusForMediaType:AVMediaTypeVideo] == AVAuthorizationStatusNotDetermined) {\n        [AVCaptureDevice requestAccessForMediaType:AVMediaTypeVideo completionHandler:^(BOOL granted) {}];\n    }'
     },
     'Microphone': {
         'plist': ['NSMicrophoneUsageDescription'],
         'frameworks': ['AVFoundation'],
         'imports': ['<AVFoundation/AVFoundation.h>'],
-        'code': '[[AVAudioSession sharedInstance] requestRecordPermission:^(BOOL granted) {}];'
+        'code': 'AVAudioSession *audioSession = [AVAudioSession sharedInstance];\n    NSError *error = nil;\n    [audioSession setCategory:AVAudioSessionCategoryPlayAndRecord withOptions:AVAudioSessionCategoryOptionDefaultToSpeaker error:&error];\n    [audioSession setActive:YES error:&error];\n    if (audioSession.recordPermission == AVAudioSessionRecordPermissionUndetermined) {\n        [audioSession requestRecordPermission:^(BOOL granted) {}];\n    }'
     },
     'Photo Library': {
         'plist': ['NSPhotoLibraryUsageDescription', 'NSPhotoLibraryAddUsageDescription'],
         'frameworks': ['Photos'],
         'imports': ['<Photos/Photos.h>'],
-        'code': '[PHPhotoLibrary requestAuthorization:^(PHAuthorizationStatus status) {}];'
+        'code': 'if ([PHPhotoLibrary authorizationStatus] == PHAuthorizationStatusNotDetermined) {\n        [PHPhotoLibrary requestAuthorization:^(PHAuthorizationStatus status) {}];\n    }'
     },
     'Location (Vị trí)': {
         'plist': ['NSLocationWhenInUseUsageDescription', 'NSLocationAlwaysUsageDescription'],
@@ -183,7 +183,6 @@ def main():
     needed_interfaces = set()
     needed_codes = []
 
-    # Thu thập các quyền và Framework tương ứng
     for perm_name, data in PERM_DATA.items():
         if ask_yes_no(t['ask_perm'].format(perm_name)):
             reason = ask_input(t['ask_reason'], t['err_req'])
@@ -210,7 +209,7 @@ def main():
         c_data = re.sub(r"Depends: firmware \(>= .*\)", f"Depends: firmware (>= {min_os})", c_data)
         with open("control", "w", encoding="utf-8") as f: f.write(c_data)
 
-    # 2. Update Makefile (Tự động chèn thêm Frameworks đã chọn)
+    # 2. Update Makefile
     if os.path.exists("Makefile"):
         with open("Makefile", "r", encoding="utf-8") as f: m_data = f.read()
         
@@ -269,14 +268,18 @@ def main():
         vc_data = re.sub(r'static NSString \* const kStartURL = @".*";', f'static NSString * const kStartURL = @"{web_url}";', vc_data)
         vc_data = re.sub(r'\[origin\.host caseInsensitiveCompare:@".*?"\]', f'[origin.host caseInsensitiveCompare:@"{domain}"]', vc_data)
 
-        # 5.1 Xử lý Imports (Các thư viện hệ thống)
+        # 5.0 TỰ ĐỘNG XÓA CODE CŨ ĐỂ TRÁNH TRÙNG LẶP
+        vc_data = re.sub(r'\s*\[self requestMediaPermissionsIfNeeded\];', '', vc_data)
+        vc_data = re.sub(r'- \(void\)requestMediaPermissionsIfNeeded\s*\{.*?\n\}\n*(?=-|\@end)', '', vc_data, flags=re.DOTALL)
+
+        # 5.1 Xử lý Imports
         import_block = "// --- AUTO_INJECT_IMPORTS_START ---\n" + "\n".join([f"#import {i}" for i in needed_imports]) + "\n// --- AUTO_INJECT_IMPORTS_END ---\n"
         if "// --- AUTO_INJECT_IMPORTS_START ---" in vc_data:
             vc_data = re.sub(r"// --- AUTO_INJECT_IMPORTS_START ---.*?// --- AUTO_INJECT_IMPORTS_END ---\n?", import_block if needed_imports else "", vc_data, flags=re.DOTALL)
         elif needed_imports:
             vc_data = re.sub(r'(#import "ViewController\.h"|#import <UIKit/UIKit\.h>)', r'\1\n' + import_block, vc_data, count=1)
 
-        # 5.2 Xử lý Interface (Các biến cục bộ cần thiết như CLLocationManager)
+        # 5.2 Xử lý Interface
         interface_content = "\n".join(needed_interfaces)
         interface_block = f"// --- AUTO_INJECT_INTERFACE_START ---\n@interface ViewController ()\n{interface_content}\n@end\n// --- AUTO_INJECT_INTERFACE_END ---\n"
         if "// --- AUTO_INJECT_INTERFACE_START ---" in vc_data:
@@ -284,7 +287,7 @@ def main():
         elif needed_interfaces:
             vc_data = re.sub(r'(@implementation ViewController)', interface_block + r'\n\1', vc_data, count=1)
 
-        # 5.3 Xử lý Method (Hàm chứa mã xin quyền)
+        # 5.3 Xử lý Method
         method_content = "\n    ".join(needed_codes)
         method_block = f"// --- AUTO_INJECT_METHOD_START ---\n- (void)requestAllPermissions {{\n    {method_content}\n}}\n// --- AUTO_INJECT_METHOD_END ---\n"
         if "// --- AUTO_INJECT_METHOD_START ---" in vc_data:
@@ -297,7 +300,7 @@ def main():
         if "// AUTO_INJECT_CALL" not in vc_data and needed_codes:
             vc_data = re.sub(r'(- \(void\)viewDidLoad\s*\{)', r'\1\n' + call_stmt, vc_data, count=1)
         elif not needed_codes and "// AUTO_INJECT_CALL" in vc_data:
-            vc_data = re.sub(r'\s*\[self requestAllPermissions\]; // AUTO_INJECT_CALL', '', vc_data)
+            vc_data = re.sub(r'\s*\[self requestAllPermissions\]; // AUTO_INJECT_CALL\n?', '', vc_data)
         
         with open("ViewController.m", "w", encoding="utf-8") as f: f.write(vc_data)
 
