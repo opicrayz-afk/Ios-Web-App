@@ -166,7 +166,7 @@ On rootless jailbreaks, use the DEB file built with the `rootless` scheme; do no
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 # Giấy phép / License 
-Copyright © 2026 *opicrayz-afk*.
+## Copyright © 2026 *opicrayz-afk*.
 
 Phát hành theo [GNU General Public License v3.0](https://www.gnu.org/licenses/gpl-3.0.html) (GPL-3.0).
 
