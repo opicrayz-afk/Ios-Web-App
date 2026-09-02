@@ -42,9 +42,9 @@ Nếu web của bạn có dùng tính năng đó, gõ `y` (Yes). Sau đó tool s
 
 ## 5. Tùy chọn Build:
 
-Build DEB: Chọn `y` nếu bạn muốn tạo file cho máy đã Jailbreak.
+**Build DEB:** Chọn `y` nếu bạn muốn tạo file cho máy đã Jailbreak.
 
-Build IPA: Chọn `y` nếu bạn muốn tạo file cài qua `TrollStore / Sideloadly`.
+**Build IPA:** Chọn `y` nếu bạn muốn tạo file cài qua `TrollStore / Sideloadly`.
 (Bạn có thể chọn `y` cho cả 2 nếu muốn tạo đồng thời).
 
 ## 6. Hoàn tất:
