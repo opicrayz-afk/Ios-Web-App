@@ -29,7 +29,7 @@ Tool sẽ yêu cầu bạn nhập *`1`* **(Tiếng Việt)** hoặc *`2`* **(Eng
 ## 3. Tùy chỉnh trang HTML Offline:
 Tool hỏi bạn có muốn đổi trang báo lỗi (khi mất mạng) không. Nếu chọn `y` (Yes), bạn có *`2`* cách:
 
-**Cách 1 (Đường dẫn file):** Kéo thả file `.html` có sẵn trong máy bạn vào Terminal (hoặc nhập đường dẫn như *`/Users/name/Desktop/offline.html`*).
+**Cách 1 (Đường dẫn file):** Kéo thả file `.html` có sẵn trong máy bạn vào Terminal (hoặc nhập đường dẫn như *`/Users/name/Desktop/index.html`*).
 
 **Cách 2 (Nhập trực tiếp):** Copy toàn bộ code HTML của bạn và Paste (dán) trực tiếp vào Terminal. Sau khi dán xong, ấn **Enter** xuống một dòng mới, gõ chữ `EOF` và ấn **Enter** để kết thúc quá trình dán.
 
@@ -82,7 +82,7 @@ The tool will ask you to enter *`1`* **(Vietnamese)** or *`2`* **(English)**.
 ## 3. Customize the offline HTML page:
 The tool asks if you want to change the error page (when offline). If you choose `y` (Yes), you have *`2`* options:
 
-**Option 1 (File path):** Drag and drop an `.html` file from your computer into the Terminal (or enter the path like *`/Users/name/Desktop/offline.html`*).
+**Option 1 (File path):** Drag and drop an `.html` file from your computer into the Terminal (or enter the path like *`/Users/name/Desktop/index.html`*).
 
 **Option 2 (Direct input):** Copy your entire HTML code and paste it directly into the Terminal. After pasting, press **Enter** to go to a new line, type `EOF`, and press **Enter** again to finish the paste process.
 
