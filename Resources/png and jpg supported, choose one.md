@@ -1,2 +1,2 @@
-# png and jpg supported
-# Just choose 1 of 2
+# .png and .jpg supported
+## Just choose 1 of 2
