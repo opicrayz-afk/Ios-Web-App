@@ -1,7 +1,7 @@
 # Công cụ này giúp bạn thiết lập và xuất file ứng dụng (IPA/DEB) chỉ trong vòng chưa đầy 1 phút. Để sử dụng, hãy làm theo các bước sau:
 
 # Bước chuẩn bị
-Đảm bảo bạn đã cài đặt Python 3 trên máy tính/máy ảo (macOS hoặc WSL).
+Đảm bảo bạn đã cài đặt Python 3 trên máy tính/máy ảo (*`macOS hoặc WSL`*).
 
 Đảm bảo đã đặt biến môi trường `$THEOS` thành công.
 
@@ -55,7 +55,7 @@ Sau khi bạn trả lời xong câu hỏi cuối cùng, tool sẽ tự động s
 # This tool helps you set up and export application files (IPA/DEB) in under a minute. To use it, follow the steps below:
 
 # Preparation
-Make sure you have Python 3 installed on your computer/virtual machine (macOS or WSL).
+Make sure you have Python 3 installed on your computer/virtual machine (*`macOS or WSL`*).
 
 Ensure that the `$THEOS` environment variable has been set successfully.
 
