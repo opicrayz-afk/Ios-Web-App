@@ -73,7 +73,7 @@ Workflow steps within the Tool
 The tool will ask you to enter *`1`* **(Vietnamese)** or *`2`* **(English)**.
 
 ## 2. Enter basic information:
-**App Name:** Enter the name that will appear on the phone screen (e.g., My Store).
+**App Name:** Enter the name that will appear on the phone screen (e.g., *`My Store`*).
 
 **Bundle ID:** Unique identifier for the app (e.g., *`com.mystore.app`*).
 
