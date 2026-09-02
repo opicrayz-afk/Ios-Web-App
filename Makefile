@@ -6,15 +6,15 @@ FINALPACKAGE = 1
 
 include $(THEOS)/makefiles/common.mk
 
-APPLICATION_NAME = CrayzKeyStorePro
-CrayzKeyStorePro_FILES = main.m AppDelegate.m ViewController.m
-CrayzKeyStorePro_FRAMEWORKS = UIKit WebKit AVFoundation Photos
-CrayzKeyStorePro_CFLAGS = -fobjc-arc
+APPLICATION_NAME = YourAppName
+YourAppName_FILES = main.m AppDelegate.m ViewController.m
+YourAppName_FRAMEWORKS = UIKit WebKit AVFoundation Photos
+YourAppName_CFLAGS = -fobjc-arc
 # Theos only copies resources declared below.  Info.plist must be at the
 # root of the .app bundle; declaring it as a bundle resource ensures that.
-CrayzKeyStorePro_BUNDLE_RESOURCES = Info.plist
-CrayzKeyStorePro_BUNDLE_RESOURCE_DIRS = Resources
-CrayzKeyStorePro_INSTALL_PATH = /Applications
+YourAppName_BUNDLE_RESOURCES = Info.plist
+YourAppName_BUNDLE_RESOURCE_DIRS = Resources
+YourAppName_INSTALL_PATH = /Applications
 
 # Jailbreak package: make package
 THEOS_PACKAGE_SCHEME ?= rootful
