@@ -32,7 +32,7 @@ TEXTS = {
         'ask_reason': "  -> Nhập lý do (Sẽ hiển thị cho người dùng khi xin quyền): ",
         'build_deb': "Bạn có muốn build file DEB (Dành cho máy Jailbreak) không?",
         'build_ipa': "Bạn có muốn build file IPA (Dành cho Sideload/TrollStore) không?",
-        'processing': "ĐANG XỬ LÝ DỮ LIỆU & BUILD...",
+        'processing': "ĐANG DỌN DẸP & XỬ LÝ DỮ LIỆU BUILD...",
         'done': "HOÀN TẤT! Quá trình thành công.",
         'error': "LỖI: Xảy ra sự cố trong quá trình build.",
         'err_req': "Đây là trường bắt buộc. Vui lòng nhập dữ liệu!",
@@ -56,7 +56,7 @@ TEXTS = {
         'ask_reason': "  -> Enter usage description (Shown to user): ",
         'build_deb': "Do you want to build a DEB file (For Jailbroken devices)?",
         'build_ipa': "Do you want to build an IPA file (For Sideload/TrollStore)?",
-        'processing': "PROCESSING & BUILDING...",
+        'processing': "CLEANING UP & PROCESSING BUILD DATA...",
         'done': "DONE! Build completed successfully.",
         'error': "ERROR: An issue occurred during the build process.",
         'err_req': "This is a required field. Please enter a value!",
@@ -177,7 +177,6 @@ def main():
         m_data = re.sub(r"APPLICATION_NAME\s*=\s*.*", f"APPLICATION_NAME = {app_name_nospace}", m_data)
         m_data = re.sub(r"IPA_NAME\s*=\s*.*", f"IPA_NAME = {app_name_nospace}.ipa", m_data)
         
-        # Sửa lỗi cảnh báo deprecation chặn build bằng cách gán cố định cờ compiler -Wno-deprecated-declarations
         m_data = re.sub(r"^[a-zA-Z0-9]+_FILES\s*=.*", f"{app_name_nospace}_FILES = main.m AppDelegate.m ViewController.m", m_data, flags=re.MULTILINE)
         m_data = re.sub(r"^[a-zA-Z0-9]+_FRAMEWORKS\s*=.*", f"{app_name_nospace}_FRAMEWORKS = UIKit WebKit AVFoundation Photos", m_data, flags=re.MULTILINE)
         m_data = re.sub(r"^[a-zA-Z0-9]+_CFLAGS\s*=.*", f"{app_name_nospace}_CFLAGS = -fobjc-arc -Wno-deprecated-declarations -Wno-error", m_data, flags=re.MULTILINE)
@@ -188,7 +187,30 @@ def main():
         with open("Makefile", "w", encoding="utf-8") as f:
             f.write(m_data)
 
-    # 3. Update Info.plist
+    # 3. Handle HTML & Clean up Resources Directory
+    os.makedirs("Resources", exist_ok=True)
+    if html_content is not None:
+        with open("Resources/index.html", "w", encoding="utf-8") as f:
+            f.write(html_content)
+
+    # 3.1: Dọn dẹp Icon thừa (Ưu tiên PNG nếu có cả 2)
+    icon_png = os.path.join("Resources", "app_icon.png")
+    icon_jpg = os.path.join("Resources", "app_icon.jpg")
+    if os.path.exists(icon_png) and os.path.exists(icon_jpg):
+        os.remove(icon_jpg)
+        print(f"{YELLOW}⚠️  Detected both PNG and JPG icons. Removed 'app_icon.jpg' to optimize app size.{RESET}")
+
+    # 3.2: Dọn dẹp file văn bản/hướng dẫn thừa trong thư mục Resources
+    for f_name in os.listdir("Resources"):
+        f_path = os.path.join("Resources", f_name)
+        if os.path.isfile(f_path):
+            name_lower = f_name.lower()
+            # Xóa các file .txt, .md, hoặc file chứa chuỗi hướng dẫn cụ thể
+            if name_lower.endswith(('.txt', '.md', '.rtf')) or "choose one" in name_lower or "png and jpg" in name_lower:
+                os.remove(f_path)
+                print(f"{YELLOW}🗑️  Removed unnecessary extra file: {f_name}{RESET}")
+
+    # 4. Update Info.plist
     if os.path.exists("Info.plist"):
         with open("Info.plist", "rb") as f:
             p_dict = plistlib.load(f)
@@ -204,6 +226,17 @@ def main():
         domain = web_url.replace("https://", "").replace("http://", "").split("/")[0]
         p_dict["WKAppBoundDomains"] = [domain]
 
+        # 4.1: Xác định đúng định dạng Icon để gán vào Plist
+        icon_files = []
+        if os.path.exists(icon_png):
+            icon_files.append("app_icon.png")
+        elif os.path.exists(icon_jpg):
+            icon_files.append("app_icon.jpg")
+        else:
+            # Fallback nếu vô tình xóa hết icon
+            icon_files = ["app_icon.png"]
+        p_dict["CFBundleIconFiles"] = icon_files
+
         for perm_list in PERMISSIONS.values():
             for k in perm_list:
                 p_dict.pop(k, None)
@@ -214,7 +247,7 @@ def main():
         with open("Info.plist", "wb") as f:
             plistlib.dump(p_dict, f)
 
-    # 4. Update ViewController.m
+    # 5. Update ViewController.m
     if os.path.exists("ViewController.m"):
         with open("ViewController.m", "r", encoding="utf-8") as f:
             vc_data = f.read()
@@ -226,16 +259,11 @@ def main():
         with open("ViewController.m", "w", encoding="utf-8") as f:
             f.write(vc_data)
 
-    # 5. Handle HTML
-    if html_content is not None:
-        os.makedirs("Resources", exist_ok=True)
-        with open("Resources/index.html", "w", encoding="utf-8") as f:
-            f.write(html_content)
-
     if not os.path.exists("Makefile"):
         print_banner(f"{RED}❌ ERROR: 'Makefile' not found!{RESET}")
         sys.exit(1)
 
+    # 6. Execute Build
     try:
         subprocess.run(["make", "clean"], check=True)
         if build_deb:
