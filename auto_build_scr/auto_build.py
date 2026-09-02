@@ -1,4 +1,5 @@
 import os
+import sys
 import re
 import plistlib
 import shutil
@@ -22,7 +23,8 @@ TEXTS = {
         'processing': "ĐANG XỬ LÝ DỮ LIỆU & BUILD...",
         'done': "HOÀN TẤT! Quá trình thành công.",
         'error': "LỖI: Xảy ra sự cố trong quá trình build.",
-        'err_req': "Đây là trường bắt buộc. Vui lòng nhập dữ liệu!"
+        'err_req': "Đây là trường bắt buộc. Vui lòng nhập dữ liệu!",
+        'err_theos': "❌ LỖI: Chưa thiết lập biến môi trường THEOS!\nVui lòng chạy lệnh sau trên Terminal trước khi mở tool:\nexport THEOS=\"$HOME/theos\""
     },
     'en': {
         'header': "IOS WEB APP AUTOMATION BUILD TOOL",
@@ -41,7 +43,8 @@ TEXTS = {
         'processing': "PROCESSING & BUILDING...",
         'done': "DONE! Build completed successfully.",
         'error': "ERROR: An issue occurred during the build process.",
-        'err_req': "This is a required field. Please enter a value!"
+        'err_req': "This is a required field. Please enter a value!",
+        'err_theos': "❌ ERROR: THEOS environment variable is not set!\nPlease run the following command in Terminal before opening the tool:\nexport THEOS=\"$HOME/theos\""
     }
 }
 
@@ -81,6 +84,11 @@ def main():
     lang_choice = input("Choice (1/2): ").strip()
     lang = 'en' if lang_choice == '2' else 'vi'
     t = TEXTS[lang]
+
+    # Kiểm tra biến THEOS trước khi làm bất cứ điều gì
+    if not os.environ.get("THEOS"):
+        print_banner(t['err_theos'])
+        sys.exit(1)
 
     os.chdir(os.path.dirname(os.path.abspath(__file__)))
     print_banner(t['header'])
