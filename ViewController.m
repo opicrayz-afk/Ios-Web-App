@@ -97,6 +97,23 @@ static NSString * const kStartURL = @"https://your website link";
 }
 #pragma mark - WKNavigationDelegate
 
+- (void)webView:(WKWebView *)webView decidePolicyForNavigationAction:(WKNavigationAction *)navigationAction decisionHandler:(void (^)(WKNavigationActionPolicy))decisionHandler {
+    NSURL *url = navigationAction.request.URL;
+    
+    // Kiểm tra xem web có gửi lệnh "app://exit" không
+    if ([url.scheme isEqualToString:@"app"] && [url.host isEqualToString:@"exit"]) {
+        decisionHandler(WKNavigationActionPolicyCancel); // Hủy việc tải trang này
+        
+        // Thoát ứng dụng (Animation văng ra màn hình chính)
+        exit(0); 
+        return;
+    }
+    
+    // Nếu là các link bình thường thì cho phép tải
+    decisionHandler(WKNavigationActionPolicyAllow);
+}
+
+
 - (void)webView:(WKWebView *)webView didFailProvisionalNavigation:(WKNavigation *)navigation withError:(NSError *)error {
     if (error.code != NSURLErrorCancelled) [self loadOfflinePage];
 }
