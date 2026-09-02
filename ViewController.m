@@ -34,15 +34,13 @@ static NSString * const kStartURL = @"https://your website link";
     self.webView.translatesAutoresizingMaskIntoConstraints = NO;
     self.webView.scrollView.contentInsetAdjustmentBehavior = UIScrollViewContentInsetAdjustmentNever;
     [self.view addSubview:self.webView];
-    // Thay thế khối NSLayoutConstraint cũ bằng khối này:
+    
     [NSLayoutConstraint activateConstraints:@[
-        // Né phần Notch/Dynamic Island ở trên cùng (dùng safeAreaLayoutGuide)
+        
         [self.webView.topAnchor constraintEqualToAnchor:self.view.safeAreaLayoutGuide.topAnchor],
          
-        // Né thanh Home Indicator ở dưới đáy (dùng safeAreaLayoutGuide)
         [self.webView.bottomAnchor constraintEqualToAnchor:self.view.safeAreaLayoutGuide.bottomAnchor],
         
-        // Căn khít 2 bên trái phải (dùng safeAreaLayoutGuide)
         [self.webView.leadingAnchor constraintEqualToAnchor:self.view.safeAreaLayoutGuide.leadingAnchor],
         [self.webView.trailingAnchor constraintEqualToAnchor:self.view.safeAreaLayoutGuide.trailingAnchor]
     ]];
@@ -74,23 +72,19 @@ static NSString * const kStartURL = @"https://your website link";
 }
 
 - (void)requestMediaPermissionsIfNeeded {
-    // 1. QUAN TRỌNG: Thiết lập phiên âm thanh để cho phép Ghi âm (Record)
     AVAudioSession *audioSession = AVAudioSession.sharedInstance;
     NSError *error = nil;
     [audioSession setCategory:AVAudioSessionCategoryPlayAndRecord withOptions:AVAudioSessionCategoryOptionDefaultToSpeaker error:&error];
     [audioSession setActive:YES error:&error];
 
-    // 2. Xin quyền Camera
     if ([AVCaptureDevice authorizationStatusForMediaType:AVMediaTypeVideo] == AVAuthorizationStatusNotDetermined) {
         [AVCaptureDevice requestAccessForMediaType:AVMediaTypeVideo completionHandler:^(__unused BOOL granted) {}];
     }
     
-    // 3. Xin quyền Micro
     if (audioSession.recordPermission == AVAudioSessionRecordPermissionUndetermined) {
         [audioSession requestRecordPermission:^(__unused BOOL granted) {}];
     }
     
-    // 4. Xin quyền Thư viện ảnh
     if ([PHPhotoLibrary authorizationStatus] == PHAuthorizationStatusNotDetermined) {
         [PHPhotoLibrary requestAuthorization:^(__unused PHAuthorizationStatus status) {}];
     }
@@ -100,16 +94,13 @@ static NSString * const kStartURL = @"https://your website link";
 - (void)webView:(WKWebView *)webView decidePolicyForNavigationAction:(WKNavigationAction *)navigationAction decisionHandler:(void (^)(WKNavigationActionPolicy))decisionHandler {
     NSURL *url = navigationAction.request.URL;
     
-    // Kiểm tra xem web có gửi lệnh "app://exit" không
     if ([url.scheme isEqualToString:@"app"] && [url.host isEqualToString:@"exit"]) {
         decisionHandler(WKNavigationActionPolicyCancel); // Hủy việc tải trang này
         
-        // Thoát ứng dụng (Animation văng ra màn hình chính)
         exit(0); 
         return;
     }
     
-    // Nếu là các link bình thường thì cho phép tải
     decisionHandler(WKNavigationActionPolicyAllow);
 }
 
@@ -126,8 +117,7 @@ static NSString * const kStartURL = @"https://your website link";
 
 #if __IPHONE_OS_VERSION_MAX_ALLOWED >= 150000
 - (void)webView:(WKWebView *)webView requestMediaCapturePermissionForOrigin:(WKSecurityOrigin *)origin initiatedByFrame:(WKFrameInfo *)frame type:(WKMediaCaptureType)type decisionHandler:(void (^)(WKPermissionDecision decision))decisionHandler API_AVAILABLE(ios(15.0)) {
-    // Only the configured first-party site receives automatic WebKit capture approval.
-    // iOS still enforces the camera/microphone grants requested above.
+    
     BOOL isTrustedOrigin = [origin.host caseInsensitiveCompare:@"your website link but dont need https://"] == NSOrderedSame;
     decisionHandler(isTrustedOrigin ? WKPermissionDecisionGrant : WKPermissionDecisionDeny);
 }
