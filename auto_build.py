@@ -5,7 +5,7 @@ import plistlib
 import shutil
 import subprocess
 
-# ANSI Color Codes for beautiful terminal styling
+# ANSI Color Codes
 GREEN = "\033[92m"
 CYAN = "\033[96m"
 YELLOW = "\033[93m"
@@ -32,11 +32,11 @@ TEXTS = {
         'ask_reason': "  -> Nhập lý do (Sẽ hiển thị cho người dùng khi xin quyền): ",
         'build_deb': "Bạn có muốn build file DEB (Dành cho máy Jailbreak) không?",
         'build_ipa': "Bạn có muốn build file IPA (Dành cho Sideload/TrollStore) không?",
-        'processing': "ĐANG DỌN DẸP & XỬ LÝ DỮ LIỆU BUILD...",
+        'processing': "ĐANG TIÊM MÃ NATIVE & XỬ LÝ BUILD...",
         'done': "HOÀN TẤT! Quá trình thành công.",
         'error': "LỖI: Xảy ra sự cố trong quá trình build.",
         'err_req': "Đây là trường bắt buộc. Vui lòng nhập dữ liệu!",
-        'err_theos': "❌ LỖI: Chưa thiết lập biến môi trường THEOS!\nVui lòng chạy lệnh sau trên Terminal trước khi mở tool:\nexport THEOS=\"$HOME/theos\""
+        'err_theos': "❌ LỖI: Chưa thiết lập biến môi trường THEOS!\nVui lòng chạy lệnh: export THEOS=\"$HOME/theos\""
     },
     'en': {
         'header': "ADVANCED IOS WEB APP AUTOMATION BUILD TOOL",
@@ -56,46 +56,83 @@ TEXTS = {
         'ask_reason': "  -> Enter usage description (Shown to user): ",
         'build_deb': "Do you want to build a DEB file (For Jailbroken devices)?",
         'build_ipa': "Do you want to build an IPA file (For Sideload/TrollStore)?",
-        'processing': "CLEANING UP & PROCESSING BUILD DATA...",
+        'processing': "INJECTING NATIVE CODE & PROCESSING BUILD...",
         'done': "DONE! Build completed successfully.",
         'error': "ERROR: An issue occurred during the build process.",
         'err_req': "This is a required field. Please enter a value!",
-        'err_theos': "❌ ERROR: THEOS environment variable is not set!\nPlease run the following command in Terminal before opening the tool:\nexport THEOS=\"$HOME/theos\""
+        'err_theos': "❌ ERROR: THEOS environment variable is not set!\nPlease run: export THEOS=\"$HOME/theos\""
     }
 }
 
-PERMISSIONS = {
-    'Camera': ['NSCameraUsageDescription'],
-    'Microphone': ['NSMicrophoneUsageDescription'],
-    'Photo Library': ['NSPhotoLibraryUsageDescription', 'NSPhotoLibraryAddUsageDescription'],
-    'Location (Vị trí)': ['NSLocationWhenInUseUsageDescription', 'NSLocationAlwaysUsageDescription'],
-    'FaceID / TouchID': ['NSFaceIDUsageDescription'],
-    'Bluetooth': ['NSBluetoothAlwaysUsageDescription', 'NSBluetoothPeripheralUsageDescription'],
-    'Contacts (Danh bạ)': ['NSContactsUsageDescription'],
-    'Calendar (Lịch)': ['NSCalendarsUsageDescription']
+# Mapping Permissions to iOS Frameworks & Objective-C Code
+PERM_DATA = {
+    'Camera': {
+        'plist': ['NSCameraUsageDescription'],
+        'frameworks': ['AVFoundation'],
+        'imports': ['<AVFoundation/AVFoundation.h>'],
+        'code': '[AVCaptureDevice requestAccessForMediaType:AVMediaTypeVideo completionHandler:^(BOOL granted) {}];'
+    },
+    'Microphone': {
+        'plist': ['NSMicrophoneUsageDescription'],
+        'frameworks': ['AVFoundation'],
+        'imports': ['<AVFoundation/AVFoundation.h>'],
+        'code': '[[AVAudioSession sharedInstance] requestRecordPermission:^(BOOL granted) {}];'
+    },
+    'Photo Library': {
+        'plist': ['NSPhotoLibraryUsageDescription', 'NSPhotoLibraryAddUsageDescription'],
+        'frameworks': ['Photos'],
+        'imports': ['<Photos/Photos.h>'],
+        'code': '[PHPhotoLibrary requestAuthorization:^(PHAuthorizationStatus status) {}];'
+    },
+    'Location (Vị trí)': {
+        'plist': ['NSLocationWhenInUseUsageDescription', 'NSLocationAlwaysUsageDescription'],
+        'frameworks': ['CoreLocation'],
+        'imports': ['<CoreLocation/CoreLocation.h>'],
+        'interface': '@property (nonatomic, strong) CLLocationManager *locManager;',
+        'code': 'self.locManager = [[CLLocationManager alloc] init];\n    [self.locManager requestWhenInUseAuthorization];'
+    },
+    'FaceID / TouchID': {
+        'plist': ['NSFaceIDUsageDescription'],
+        'frameworks': ['LocalAuthentication'],
+        'imports': ['<LocalAuthentication/LocalAuthentication.h>'],
+        'code': 'LAContext *context = [[LAContext alloc] init];\n    NSError *error = nil;\n    [context canEvaluatePolicy:LAPolicyDeviceOwnerAuthenticationWithBiometrics error:&error];'
+    },
+    'Bluetooth': {
+        'plist': ['NSBluetoothAlwaysUsageDescription', 'NSBluetoothPeripheralUsageDescription'],
+        'frameworks': ['CoreBluetooth'],
+        'imports': ['<CoreBluetooth/CoreBluetooth.h>'],
+        'interface': '@property (nonatomic, strong) CBCentralManager *btManager;',
+        'code': 'self.btManager = [[CBCentralManager alloc] initWithDelegate:nil queue:nil];'
+    },
+    'Contacts (Danh bạ)': {
+        'plist': ['NSContactsUsageDescription'],
+        'frameworks': ['Contacts'],
+        'imports': ['<Contacts/Contacts.h>'],
+        'code': 'CNContactStore *contactStore = [[CNContactStore alloc] init];\n    [contactStore requestAccessForEntityType:CNEntityTypeContacts completionHandler:^(BOOL granted, NSError * _Nullable error) {}];'
+    },
+    'Calendar (Lịch)': {
+        'plist': ['NSCalendarsUsageDescription'],
+        'frameworks': ['EventKit'],
+        'imports': ['<EventKit/EventKit.h>'],
+        'code': 'EKEventStore *eventStore = [[EKEventStore alloc] init];\n    [eventStore requestAccessToEntityType:EKEntityTypeEvent completionHandler:^(BOOL granted, NSError * _Nullable error) {}];'
+    }
 }
 
 def print_banner(text):
-    print(f"\n{CYAN}{'='*60}{RESET}")
-    print(f"{BOLD}{CYAN}{text.center(60)}{RESET}")
-    print(f"{CYAN}{'='*60}{RESET}\n")
+    print(f"\n{CYAN}{'='*60}{RESET}\n{BOLD}{CYAN}{text.center(60)}{RESET}\n{CYAN}{'='*60}{RESET}\n")
 
 def ask_input(prompt, t_err, mandatory=True, default=""):
     while True:
         data = input(f"{GREEN}{prompt}{RESET}").strip()
-        if data:
-            return data
-        if not mandatory:
-            return default
+        if data: return data
+        if not mandatory: return default
         print(f"{RED}⚠️ {t_err}{RESET}")
 
 def ask_yes_no(prompt):
     while True:
         ans = input(f"{YELLOW}{prompt} (y/n): {RESET}").strip().lower()
-        if ans in ['y', 'yes']:
-            return True
-        elif ans in ['n', 'no']:
-            return False
+        if ans in ['y', 'yes']: return True
+        elif ans in ['n', 'no']: return False
 
 def main():
     print(f"{BOLD}Select Language / Chọn ngôn ngữ:{RESET}\n1. Tiếng Việt\n2. English")
@@ -114,13 +151,11 @@ def main():
     app_name_nospace = "".join(e for e in app_name if e.isalnum())
     bundle_id = ask_input(t['ask_bundle_id'], t['err_req'])
     web_url = ask_input(t['ask_url'], t['err_req'])
-    
     version = ask_input(t['ask_version'], "", mandatory=False, default="1.0.0")
     author = ask_input(t['ask_author'], "", mandatory=False, default="Developer")
     description = ask_input(t['ask_desc'], "", mandatory=False, default="A Web-based iOS Application")
     min_os = ask_input(t['ask_min_os'], "", mandatory=False, default="13.0")
 
-    # Lấy riêng tên miền (domain) từ URL
     domain = web_url.replace("https://", "").replace("http://", "").split("/")[0]
 
     html_content = None
@@ -129,8 +164,7 @@ def main():
         if mode == '1':
             path = ask_input(t['html_path'], t['err_req'])
             if os.path.exists(path):
-                with open(path, "r", encoding="utf-8") as f:
-                    html_content = f.read()
+                with open(path, "r", encoding="utf-8") as f: html_content = f.read()
             else:
                 print(f"{RED}⚠️ File not found! Keeping default.{RESET}" if lang == 'en' else f"{RED}⚠️ Không tìm thấy file! Giữ nguyên mặc định.{RESET}")
         else:
@@ -138,29 +172,35 @@ def main():
             lines = []
             while True:
                 line = input()
-                if line.strip() == "EOF":
-                    break
+                if line.strip() == "EOF": break
                 lines.append(line)
             html_content = "\n".join(lines)
 
     print_banner(t['perm_header'])
     granted_perms = {}
-    for perm_name, plist_keys in PERMISSIONS.items():
+    needed_frameworks = set()
+    needed_imports = set()
+    needed_interfaces = set()
+    needed_codes = []
+
+    # Thu thập các quyền và Framework tương ứng
+    for perm_name, data in PERM_DATA.items():
         if ask_yes_no(t['ask_perm'].format(perm_name)):
             reason = ask_input(t['ask_reason'], t['err_req'])
-            for key in plist_keys:
-                granted_perms[key] = reason
+            for key in data['plist']: granted_perms[key] = reason
+            needed_frameworks.update(data['frameworks'])
+            needed_imports.update(data['imports'])
+            if 'interface' in data: needed_interfaces.add(data['interface'])
+            needed_codes.append(data['code'])
 
     print_banner("BUILD OPTIONS")
     build_deb = ask_yes_no(t['build_deb'])
     build_ipa = ask_yes_no(t['build_ipa'])
-
     print_banner(t['processing'])
 
     # 1. Update control
     if os.path.exists("control"):
-        with open("control", "r", encoding="utf-8") as f:
-            c_data = f.read()
+        with open("control", "r", encoding="utf-8") as f: c_data = f.read()
         c_data = re.sub(r"Package:.*", f"Package: {bundle_id}", c_data)
         c_data = re.sub(r"Name:.*", f"Name: {app_name}", c_data)
         c_data = re.sub(r"Version:.*", f"Version: {version}", c_data)
@@ -168,52 +208,43 @@ def main():
         c_data = re.sub(r"Maintainer:.*", f"Maintainer: {author}", c_data)
         c_data = re.sub(r"Author:.*", f"Author: {author}", c_data)
         c_data = re.sub(r"Depends: firmware \(>= .*\)", f"Depends: firmware (>= {min_os})", c_data)
-        with open("control", "w", encoding="utf-8") as f:
-            f.write(c_data)
+        with open("control", "w", encoding="utf-8") as f: f.write(c_data)
 
-    # 2. Update Makefile
+    # 2. Update Makefile (Tự động chèn thêm Frameworks đã chọn)
     if os.path.exists("Makefile"):
-        with open("Makefile", "r", encoding="utf-8") as f:
-            m_data = f.read()
+        with open("Makefile", "r", encoding="utf-8") as f: m_data = f.read()
         
         m_data = re.sub(r"TARGET\s*:=\s*iphone:clang:latest:.*", f"TARGET := iphone:clang:latest:{min_os}", m_data)
         m_data = re.sub(r"APPLICATION_NAME\s*=\s*.*", f"APPLICATION_NAME = {app_name_nospace}", m_data)
         m_data = re.sub(r"IPA_NAME\s*=\s*.*", f"IPA_NAME = {app_name_nospace}.ipa", m_data)
         
+        frameworks_str = "UIKit WebKit " + " ".join(needed_frameworks)
+        
         m_data = re.sub(r"^[a-zA-Z0-9]+_FILES\s*=.*", f"{app_name_nospace}_FILES = main.m AppDelegate.m ViewController.m", m_data, flags=re.MULTILINE)
-        m_data = re.sub(r"^[a-zA-Z0-9]+_FRAMEWORKS\s*=.*", f"{app_name_nospace}_FRAMEWORKS = UIKit WebKit AVFoundation Photos", m_data, flags=re.MULTILINE)
+        m_data = re.sub(r"^[a-zA-Z0-9]+_FRAMEWORKS\s*=.*", f"{app_name_nospace}_FRAMEWORKS = {frameworks_str}", m_data, flags=re.MULTILINE)
         m_data = re.sub(r"^[a-zA-Z0-9]+_CFLAGS\s*=.*", f"{app_name_nospace}_CFLAGS = -fobjc-arc -Wno-deprecated-declarations -Wno-error", m_data, flags=re.MULTILINE)
         m_data = re.sub(r"^[a-zA-Z0-9]+_BUNDLE_RESOURCES\s*=.*", f"{app_name_nospace}_BUNDLE_RESOURCES = Info.plist", m_data, flags=re.MULTILINE)
         m_data = re.sub(r"^[a-zA-Z0-9]+_BUNDLE_RESOURCE_DIRS\s*=.*", f"{app_name_nospace}_BUNDLE_RESOURCE_DIRS = Resources", m_data, flags=re.MULTILINE)
         m_data = re.sub(r"^[a-zA-Z0-9]+_INSTALL_PATH\s*=.*", f"{app_name_nospace}_INSTALL_PATH = /Applications", m_data, flags=re.MULTILINE)
 
-        with open("Makefile", "w", encoding="utf-8") as f:
-            f.write(m_data)
+        with open("Makefile", "w", encoding="utf-8") as f: f.write(m_data)
 
-    # 3. Handle HTML & Clean up Resources Directory
+    # 3. Handle HTML & Clean up Resources
     os.makedirs("Resources", exist_ok=True)
     if html_content is not None:
-        with open("Resources/index.html", "w", encoding="utf-8") as f:
-            f.write(html_content)
+        with open("Resources/index.html", "w", encoding="utf-8") as f: f.write(html_content)
 
-    icon_png = os.path.join("Resources", "app_icon.png")
-    icon_jpg = os.path.join("Resources", "app_icon.jpg")
+    icon_png, icon_jpg = os.path.join("Resources", "app_icon.png"), os.path.join("Resources", "app_icon.jpg")
     if os.path.exists(icon_png) and os.path.exists(icon_jpg):
         os.remove(icon_jpg)
-        print(f"{YELLOW}⚠️  Detected both PNG and JPG icons. Removed 'app_icon.jpg' to optimize app size.{RESET}")
-
     for f_name in os.listdir("Resources"):
         f_path = os.path.join("Resources", f_name)
-        if os.path.isfile(f_path):
-            name_lower = f_name.lower()
-            if name_lower.endswith(('.txt', '.md', '.rtf')) or "choose one" in name_lower or "png and jpg" in name_lower:
-                os.remove(f_path)
-                print(f"{YELLOW}🗑️  Removed unnecessary extra file: {f_name}{RESET}")
+        if os.path.isfile(f_path) and (f_name.lower().endswith(('.txt', '.md', '.rtf')) or "choose one" in f_name.lower() or "png and jpg" in f_name.lower()):
+            os.remove(f_path)
 
     # 4. Update Info.plist
     if os.path.exists("Info.plist"):
-        with open("Info.plist", "rb") as f:
-            p_dict = plistlib.load(f)
+        with open("Info.plist", "rb") as f: p_dict = plistlib.load(f)
         
         p_dict["CFBundleDisplayName"] = app_name
         p_dict["CFBundleName"] = app_name_nospace
@@ -222,49 +253,53 @@ def main():
         p_dict["CFBundleShortVersionString"] = version
         p_dict["CFBundleVersion"] = version
         p_dict["MinimumOSVersion"] = min_os
-        
         p_dict["WKAppBoundDomains"] = [domain]
+        p_dict["CFBundleIconFiles"] = ["app_icon.png"] if os.path.exists(icon_png) else ["app_icon.jpg"] if os.path.exists(icon_jpg) else ["app_icon.png"]
 
-        icon_files = []
-        if os.path.exists(icon_png):
-            icon_files.append("app_icon.png")
-        elif os.path.exists(icon_jpg):
-            icon_files.append("app_icon.jpg")
-        else:
-            icon_files = ["app_icon.png"]
-        p_dict["CFBundleIconFiles"] = icon_files
+        for perm_list in PERM_DATA.values():
+            for k in perm_list['plist']: p_dict.pop(k, None)
+        for k, v in granted_perms.items(): p_dict[k] = v
 
-        for perm_list in PERMISSIONS.values():
-            for k in perm_list:
-                p_dict.pop(k, None)
-                
-        for k, v in granted_perms.items():
-            p_dict[k] = v
+        with open("Info.plist", "wb") as f: plistlib.dump(p_dict, f)
 
-        with open("Info.plist", "wb") as f:
-            plistlib.dump(p_dict, f)
-
-    # 5. Update ViewController.m
+    # 5. Inject Objective-C Code vào ViewController.m
     if os.path.exists("ViewController.m"):
-        with open("ViewController.m", "r", encoding="utf-8") as f:
-            vc_data = f.read()
+        with open("ViewController.m", "r", encoding="utf-8") as f: vc_data = f.read()
             
-        # Đổi kStartURL thành URL đầy đủ
-        vc_data = re.sub(
-            r'static NSString \* const kStartURL = @".*";', 
-            f'static NSString * const kStartURL = @"{web_url}";', 
-            vc_data
-        )
+        vc_data = re.sub(r'static NSString \* const kStartURL = @".*";', f'static NSString * const kStartURL = @"{web_url}";', vc_data)
+        vc_data = re.sub(r'\[origin\.host caseInsensitiveCompare:@".*?"\]', f'[origin.host caseInsensitiveCompare:@"{domain}"]', vc_data)
+
+        # 5.1 Xử lý Imports (Các thư viện hệ thống)
+        import_block = "// --- AUTO_INJECT_IMPORTS_START ---\n" + "\n".join([f"#import {i}" for i in needed_imports]) + "\n// --- AUTO_INJECT_IMPORTS_END ---\n"
+        if "// --- AUTO_INJECT_IMPORTS_START ---" in vc_data:
+            vc_data = re.sub(r"// --- AUTO_INJECT_IMPORTS_START ---.*?// --- AUTO_INJECT_IMPORTS_END ---\n?", import_block if needed_imports else "", vc_data, flags=re.DOTALL)
+        elif needed_imports:
+            vc_data = re.sub(r'(#import "ViewController\.h"|#import <UIKit/UIKit\.h>)', r'\1\n' + import_block, vc_data, count=1)
+
+        # 5.2 Xử lý Interface (Các biến cục bộ cần thiết như CLLocationManager)
+        interface_content = "\n".join(needed_interfaces)
+        interface_block = f"// --- AUTO_INJECT_INTERFACE_START ---\n@interface ViewController ()\n{interface_content}\n@end\n// --- AUTO_INJECT_INTERFACE_END ---\n"
+        if "// --- AUTO_INJECT_INTERFACE_START ---" in vc_data:
+            vc_data = re.sub(r"// --- AUTO_INJECT_INTERFACE_START ---.*?// --- AUTO_INJECT_INTERFACE_END ---\n?", interface_block if needed_interfaces else "", vc_data, flags=re.DOTALL)
+        elif needed_interfaces:
+            vc_data = re.sub(r'(@implementation ViewController)', interface_block + r'\n\1', vc_data, count=1)
+
+        # 5.3 Xử lý Method (Hàm chứa mã xin quyền)
+        method_content = "\n    ".join(needed_codes)
+        method_block = f"// --- AUTO_INJECT_METHOD_START ---\n- (void)requestAllPermissions {{\n    {method_content}\n}}\n// --- AUTO_INJECT_METHOD_END ---\n"
+        if "// --- AUTO_INJECT_METHOD_START ---" in vc_data:
+            vc_data = re.sub(r"// --- AUTO_INJECT_METHOD_START ---.*?// --- AUTO_INJECT_METHOD_END ---\n?", method_block if needed_codes else "", vc_data, flags=re.DOTALL)
+        elif needed_codes:
+            vc_data = re.sub(r'(@implementation ViewController)', r'\1\n' + method_block, vc_data, count=1)
+
+        # 5.4 Chèn lời gọi hàm vào viewDidLoad
+        call_stmt = "    [self requestAllPermissions]; // AUTO_INJECT_CALL"
+        if "// AUTO_INJECT_CALL" not in vc_data and needed_codes:
+            vc_data = re.sub(r'(- \(void\)viewDidLoad\s*\{)', r'\1\n' + call_stmt, vc_data, count=1)
+        elif not needed_codes and "// AUTO_INJECT_CALL" in vc_data:
+            vc_data = re.sub(r'\s*\[self requestAllPermissions\]; // AUTO_INJECT_CALL', '', vc_data)
         
-        # Đổi isTrustedOrigin thành domain (Không chứa https)
-        vc_data = re.sub(
-            r'\[origin\.host caseInsensitiveCompare:@".*?"\]',
-            f'[origin.host caseInsensitiveCompare:@"{domain}"]',
-            vc_data
-        )
-        
-        with open("ViewController.m", "w", encoding="utf-8") as f:
-            f.write(vc_data)
+        with open("ViewController.m", "w", encoding="utf-8") as f: f.write(vc_data)
 
     if not os.path.exists("Makefile"):
         print_banner(f"{RED}❌ ERROR: 'Makefile' not found!{RESET}")
@@ -273,10 +308,8 @@ def main():
     # 6. Execute Build
     try:
         subprocess.run(["make", "clean"], check=True)
-        if build_deb:
-            subprocess.run(["make", "package"], check=True)
-        if build_ipa:
-            subprocess.run(["make", "ipa"], check=True)
+        if build_deb: subprocess.run(["make", "package"], check=True)
+        if build_ipa: subprocess.run(["make", "ipa"], check=True)
         print_banner(f"{GREEN}{t['done']}{RESET}")
     except subprocess.CalledProcessError:
         print_banner(f"{RED}{t['error']}{RESET}")
