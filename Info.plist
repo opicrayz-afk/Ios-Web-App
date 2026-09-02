@@ -5,15 +5,15 @@
     <key>CFBundleDevelopmentRegion</key>
     <string>vi</string>
     <key>CFBundleDisplayName</key>
-    <string>Crayz Key Store Pro</string>
+    <string>Your App Name</string>
     <key>CFBundleExecutable</key>
-    <string>CrayzKeyStorePro</string>
+    <string>Your App Name</string>
     <key>CFBundleIdentifier</key>
-    <string>com.crayz.keystorepro</string>
+    <string>Your Bundle Id</string>
     <key>CFBundleInfoDictionaryVersion</key>
     <string>6.0</string>
     <key>CFBundleName</key>
-    <string>Crayz Key Store Pro</string>
+    <string>Your App Name</string>
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>CFBundleSupportedPlatforms</key>
@@ -36,7 +36,7 @@
         <true/>
     </dict>
     <key>NSCameraUsageDescription</key>
-    <string>Crayz Key Store Pro cần quyền camera để chụp ảnh hoặc quét nội dung trong trang web.</string>
+    <string>Your D</string>
     <key>NSMicrophoneUsageDescription</key>
     <string>Crayz Key Store Pro cần quyền micro để ghi âm và gửi âm thanh trong trang web.</string>
     <key>NSPhotoLibraryUsageDescription</key>
