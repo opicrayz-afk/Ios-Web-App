@@ -42,10 +42,62 @@ Nếu web của bạn có dùng tính năng đó, gõ `y` (Yes). Sau đó tool s
 
 ## 5. Tùy chọn Build:
 
-**Build DEB:** Chọn `y` nếu bạn muốn tạo file cho máy đã Jailbreak.
+**Build DEB:** Chọn `y` nếu bạn muốn tạo file cho *`máy đã Jailbreak`*.
 
-**Build IPA:** Chọn `y` nếu bạn muốn tạo file cài qua `TrollStore / Sideloadly`.
-(Bạn có thể chọn `y` cho cả 2 nếu muốn tạo đồng thời).
+**Build IPA:** Chọn `y` nếu bạn muốn tạo file cài qua*`TrollStore / Sideloadly`*.
+(Bạn có thể chọn `y` cho cả *`2`* nếu muốn tạo đồng thời).
 
 ## 6. Hoàn tất:
 Sau khi bạn trả lời xong câu hỏi cuối cùng, tool sẽ tự động sửa toàn bộ code trong project và kích hoạt quy trình Build của Theos. Khi thấy thông báo **HOÀN TẤT!**, bạn chỉ cần mở thư mục `packages/` trong project để lấy file `.ipa` hoặc `.deb` ra cài đặt.
+
+------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+# This tool helps you set up and export application files (IPA/DEB) in under a minute. To use it, follow the steps below:
+
+# Preparation
+Make sure you have Python 3 installed on your computer/virtual machine (macOS or WSL).
+
+Ensure that the `$THEOS` environment variable has been set successfully.
+
+Open Terminal, navigate (`cd`) to the root directory of the project (where the `auto_build.py` file is located).
+
+## Running the Tool
+Launch the tool with the command:
+
+```bash
+  python3 auto_build.py
+```
+
+Workflow steps within the Tool
+## 1. Choose language:
+The tool will ask you to enter *`1`* **(Vietnamese)** or *`2`* **(English)**.
+
+## 2. Enter basic information:
+**App Name:** Enter the name that will appear on the phone screen (e.g., My Store).
+
+**Bundle ID:** Unique identifier for the app (e.g., *`com.mystore.app`*).
+
+**Website Link:** The URL of the website you want to turn into an app (e.g., *`https://mystore.com`*).
+
+## 3. Customize the offline HTML page:
+The tool asks if you want to change the error page (when offline). If you choose `y` (Yes), you have *`2`* options:
+
+**Option 1 (File path):** Drag and drop an `.html` file from your computer into the Terminal (or enter the path like *`/Users/name/Desktop/offline.html`*).
+
+**Option 2 (Direct input):** Copy your entire HTML code and paste it directly into the Terminal. After pasting, press **Enter** to go to a new line, type `EOF`, and press **Enter** again to finish the paste process.
+
+## 4. Apple Permissions:
+The tool will ask you about 8 of the most common permissions (*`Camera, Microphone, Photos, Location, FaceID, Bluetooth, Contacts, Calendar`*).
+
+If your website does not use a certain feature, type `n` (No) to skip it (this keeps the app cleaner and avoids Apple's suspicion of data collection).
+
+If your website does use that feature, type `y` (Yes). The tool will then ask you to enter a Reason. Provide a short sentence (e.g., "*`The app needs to use the camera to scan QR codes`*"). This sentence will appear on the iPhone screen when the app requests user permission.
+
+## 5. Build Options:
+**Build DEB:** Choose `y` if you want to create a file for *`Jailbroken devices`*.
+
+**Build IPA:** Choose `y` if you want to create a file for installation via *`TrollStore / Sideloadly`*.
+(You can choose `y` for *`both`* if you want to generate them simultaneously).
+
+## 6. Completion:
+After you answer the final question, the tool will automatically modify all code in the project and trigger the Theos build process. When you see the **COMPLETED!** message, simply open the `packages/` folder in the project to retrieve the `.ipa` or `.deb` file and install it.
