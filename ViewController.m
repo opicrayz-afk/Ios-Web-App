@@ -3,7 +3,7 @@
 #import <AVFoundation/AVFoundation.h>
 #import <Photos/Photos.h>
 
-static NSString * const kStartURL = @"https://crayzkeystore.vercel.app";
+static NSString * const kStartURL = @"https://your website link";
 
 @interface ViewController () <WKNavigationDelegate, WKUIDelegate, UIDocumentPickerDelegate>
 @property (nonatomic, strong) WKWebView *webView;
@@ -111,7 +111,7 @@ static NSString * const kStartURL = @"https://crayzkeystore.vercel.app";
 - (void)webView:(WKWebView *)webView requestMediaCapturePermissionForOrigin:(WKSecurityOrigin *)origin initiatedByFrame:(WKFrameInfo *)frame type:(WKMediaCaptureType)type decisionHandler:(void (^)(WKPermissionDecision decision))decisionHandler API_AVAILABLE(ios(15.0)) {
     // Only the configured first-party site receives automatic WebKit capture approval.
     // iOS still enforces the camera/microphone grants requested above.
-    BOOL isTrustedOrigin = [origin.host caseInsensitiveCompare:@"crayzkeystore.vercel.app"] == NSOrderedSame;
+    BOOL isTrustedOrigin = [origin.host caseInsensitiveCompare:@"your website link but dont need https://"] == NSOrderedSame;
     decisionHandler(isTrustedOrigin ? WKPermissionDecisionGrant : WKPermissionDecisionDeny);
 }
 #endif
