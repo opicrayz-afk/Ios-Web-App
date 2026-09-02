@@ -120,6 +120,9 @@ def main():
     description = ask_input(t['ask_desc'], "", mandatory=False, default="A Web-based iOS Application")
     min_os = ask_input(t['ask_min_os'], "", mandatory=False, default="13.0")
 
+    # Lấy riêng tên miền (domain) từ URL
+    domain = web_url.replace("https://", "").replace("http://", "").split("/")[0]
+
     html_content = None
     if ask_yes_no(t['html_change']):
         mode = ask_input(t['html_mode'], t['err_req'])
@@ -193,19 +196,16 @@ def main():
         with open("Resources/index.html", "w", encoding="utf-8") as f:
             f.write(html_content)
 
-    # 3.1: Dọn dẹp Icon thừa (Ưu tiên PNG nếu có cả 2)
     icon_png = os.path.join("Resources", "app_icon.png")
     icon_jpg = os.path.join("Resources", "app_icon.jpg")
     if os.path.exists(icon_png) and os.path.exists(icon_jpg):
         os.remove(icon_jpg)
         print(f"{YELLOW}⚠️  Detected both PNG and JPG icons. Removed 'app_icon.jpg' to optimize app size.{RESET}")
 
-    # 3.2: Dọn dẹp file văn bản/hướng dẫn thừa trong thư mục Resources
     for f_name in os.listdir("Resources"):
         f_path = os.path.join("Resources", f_name)
         if os.path.isfile(f_path):
             name_lower = f_name.lower()
-            # Xóa các file .txt, .md, hoặc file chứa chuỗi hướng dẫn cụ thể
             if name_lower.endswith(('.txt', '.md', '.rtf')) or "choose one" in name_lower or "png and jpg" in name_lower:
                 os.remove(f_path)
                 print(f"{YELLOW}🗑️  Removed unnecessary extra file: {f_name}{RESET}")
@@ -223,17 +223,14 @@ def main():
         p_dict["CFBundleVersion"] = version
         p_dict["MinimumOSVersion"] = min_os
         
-        domain = web_url.replace("https://", "").replace("http://", "").split("/")[0]
         p_dict["WKAppBoundDomains"] = [domain]
 
-        # 4.1: Xác định đúng định dạng Icon để gán vào Plist
         icon_files = []
         if os.path.exists(icon_png):
             icon_files.append("app_icon.png")
         elif os.path.exists(icon_jpg):
             icon_files.append("app_icon.jpg")
         else:
-            # Fallback nếu vô tình xóa hết icon
             icon_files = ["app_icon.png"]
         p_dict["CFBundleIconFiles"] = icon_files
 
@@ -251,11 +248,21 @@ def main():
     if os.path.exists("ViewController.m"):
         with open("ViewController.m", "r", encoding="utf-8") as f:
             vc_data = f.read()
+            
+        # Đổi kStartURL thành URL đầy đủ
         vc_data = re.sub(
             r'static NSString \* const kStartURL = @".*";', 
             f'static NSString * const kStartURL = @"{web_url}";', 
             vc_data
         )
+        
+        # Đổi isTrustedOrigin thành domain (Không chứa https)
+        vc_data = re.sub(
+            r'\[origin\.host caseInsensitiveCompare:@".*?"\]',
+            f'[origin.host caseInsensitiveCompare:@"{domain}"]',
+            vc_data
+        )
+        
         with open("ViewController.m", "w", encoding="utf-8") as f:
             f.write(vc_data)
 
