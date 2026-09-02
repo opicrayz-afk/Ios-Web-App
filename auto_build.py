@@ -5,12 +5,24 @@ import plistlib
 import shutil
 import subprocess
 
+# ANSI Color Codes for beautiful terminal styling
+GREEN = "\033[92m"
+CYAN = "\033[96m"
+YELLOW = "\033[93m"
+RED = "\033[91m"
+BOLD = "\033[1m"
+RESET = "\033[0m"
+
 TEXTS = {
     'vi': {
-        'header': "CÔNG CỤ TỰ ĐỘNG BUILD IOS WEB APP",
+        'header': "CÔNG CỤ TỰ ĐỘNG BUILD IOS WEB APP NÂNG CAO",
         'ask_app_name': "Nhập tên App (Bắt buộc): ",
         'ask_bundle_id': "Nhập Bundle ID (VD: com.myname.myapp) (Bắt buộc): ",
         'ask_url': "Nhập Link Website (VD: https://web.com) (Bắt buộc): ",
+        'ask_version': "Nhập Version App (Mặc định: 1.0.0): ",
+        'ask_author': "Nhập Tác giả / Maintainer (Mặc định: Developer): ",
+        'ask_desc': "Nhập Mô tả ứng dụng: ",
+        'ask_min_os': "Nhập phiên bản iOS tối thiểu - Minimum OS (VD: 13.0): ",
         'html_change': "Bạn có muốn thay đổi trang HTML offline không?",
         'html_mode': "Chọn cách nhập HTML:\n  1. Cung cấp đường dẫn file (.html)\n  2. Nhập/Dán code HTML trực tiếp\nLựa chọn (1 hoặc 2): ",
         'html_path': "Nhập đường dẫn file HTML: ",
@@ -27,10 +39,14 @@ TEXTS = {
         'err_theos': "❌ LỖI: Chưa thiết lập biến môi trường THEOS!\nVui lòng chạy lệnh sau trên Terminal trước khi mở tool:\nexport THEOS=\"$HOME/theos\""
     },
     'en': {
-        'header': "IOS WEB APP AUTOMATION BUILD TOOL",
+        'header': "ADVANCED IOS WEB APP AUTOMATION BUILD TOOL",
         'ask_app_name': "Enter App Name (Required): ",
         'ask_bundle_id': "Enter Bundle ID (e.g., com.myname.myapp) (Required): ",
         'ask_url': "Enter Web URL (e.g., https://web.com) (Required): ",
+        'ask_version': "Enter App Version (Default: 1.0.0): ",
+        'ask_author': "Enter Author / Maintainer (Default: Developer): ",
+        'ask_desc': "Enter App Description: ",
+        'ask_min_os': "Enter Minimum OS Version (e.g., 13.0): ",
         'html_change': "Do you want to change the offline HTML page?",
         'html_mode': "Choose HTML input method:\n  1. Provide a file path (.html)\n  2. Type/Paste raw HTML code\nChoice (1 or 2): ",
         'html_path': "Enter HTML file path: ",
@@ -60,27 +76,29 @@ PERMISSIONS = {
 }
 
 def print_banner(text):
-    print(f"\n{'='*50}\n{text.center(50)}\n{'='*50}\n")
+    print(f"\n{CYAN}{'='*60}{RESET}")
+    print(f"{BOLD}{CYAN}{text.center(60)}{RESET}")
+    print(f"{CYAN}{'='*60}{RESET}\n")
 
-def ask_input(prompt, t_err, mandatory=True):
+def ask_input(prompt, t_err, mandatory=True, default=""):
     while True:
-        data = input(prompt).strip()
+        data = input(f"{GREEN}{prompt}{RESET}").strip()
         if data:
             return data
         if not mandatory:
-            return ""
-        print(f"⚠️ {t_err}")
+            return default
+        print(f"{RED}⚠️ {t_err}{RESET}")
 
 def ask_yes_no(prompt):
     while True:
-        ans = input(f"{prompt} (y/n): ").strip().lower()
+        ans = input(f"{YELLOW}{prompt} (y/n): {RESET}").strip().lower()
         if ans in ['y', 'yes']:
             return True
         elif ans in ['n', 'no']:
             return False
 
 def main():
-    print("Select Language / Chọn ngôn ngữ:\n1. Tiếng Việt\n2. English")
+    print(f"{BOLD}Select Language / Chọn ngôn ngữ:{RESET}\n1. Tiếng Việt\n2. English")
     lang_choice = input("Choice (1/2): ").strip()
     lang = 'en' if lang_choice == '2' else 'vi'
     t = TEXTS[lang]
@@ -96,6 +114,11 @@ def main():
     app_name_nospace = "".join(e for e in app_name if e.isalnum())
     bundle_id = ask_input(t['ask_bundle_id'], t['err_req'])
     web_url = ask_input(t['ask_url'], t['err_req'])
+    
+    version = ask_input(t['ask_version'], "", mandatory=False, default="1.0.0")
+    author = ask_input(t['ask_author'], "", mandatory=False, default="Developer")
+    description = ask_input(t['ask_desc'], "", mandatory=False, default="A Web-based iOS Application")
+    min_os = ask_input(t['ask_min_os'], "", mandatory=False, default="13.0")
 
     html_content = None
     if ask_yes_no(t['html_change']):
@@ -106,9 +129,9 @@ def main():
                 with open(path, "r", encoding="utf-8") as f:
                     html_content = f.read()
             else:
-                print("⚠️ File not found! Keeping default." if lang == 'en' else "⚠️ Không tìm thấy file! Giữ nguyên mặc định.")
+                print(f"{RED}⚠️ File not found! Keeping default.{RESET}" if lang == 'en' else f"{RED}⚠️ Không tìm thấy file! Giữ nguyên mặc định.{RESET}")
         else:
-            print(f"\n{t['html_raw']}")
+            print(f"\n{CYAN}{t['html_raw']}{RESET}")
             lines = []
             while True:
                 line = input()
@@ -131,20 +154,29 @@ def main():
 
     print_banner(t['processing'])
 
+    # 1. Update control
     if os.path.exists("control"):
         with open("control", "r", encoding="utf-8") as f:
             c_data = f.read()
-        c_data = re.sub(r"Package: .*", f"Package: {bundle_id}", c_data)
-        c_data = re.sub(r"Name: .*", f"Name: {app_name}", c_data)
+        c_data = re.sub(r"Package:.*", f"Package: {bundle_id}", c_data)
+        c_data = re.sub(r"Name:.*", f"Name: {app_name}", c_data)
+        c_data = re.sub(r"Version:.*", f"Version: {version}", c_data)
+        c_data = re.sub(r"Description:.*", f"Description: {description}", c_data)
+        c_data = re.sub(r"Maintainer:.*", f"Maintainer: {author}", c_data)
+        c_data = re.sub(r"Author:.*", f"Author: {author}", c_data)
+        c_data = re.sub(r"Depends: firmware \(>= .*\)", f"Depends: firmware (>= {min_os})", c_data)
         with open("control", "w", encoding="utf-8") as f:
             f.write(c_data)
 
+    # 2. Update Makefile
     if os.path.exists("Makefile"):
         with open("Makefile", "r", encoding="utf-8") as f:
             m_data = f.read()
         
-        # Cập nhật tên ứng dụng và tự động đổi cả các biến tiền tố trong Makefile (ví dụ: YourAppName_FILES thành hmmm_FILES)
+        m_data = re.sub(r"TARGET\s*:=\s*iphone:clang:latest:.*", f"TARGET := iphone:clang:latest:{min_os}", m_data)
         m_data = re.sub(r"APPLICATION_NAME\s*=\s*.*", f"APPLICATION_NAME = {app_name_nospace}", m_data)
+        m_data = re.sub(r"IPA_NAME\s*=\s*.*", f"IPA_NAME = {app_name_nospace}.ipa", m_data)
+        
         m_data = re.sub(r"^[a-zA-Z0-9]+_FILES", f"{app_name_nospace}_FILES", m_data, flags=re.MULTILINE)
         m_data = re.sub(r"^[a-zA-Z0-9]+_FRAMEWORKS", f"{app_name_nospace}_FRAMEWORKS", m_data, flags=re.MULTILINE)
         m_data = re.sub(r"^[a-zA-Z0-9]+_CFLAGS", f"{app_name_nospace}_CFLAGS", m_data, flags=re.MULTILINE)
@@ -155,6 +187,7 @@ def main():
         with open("Makefile", "w", encoding="utf-8") as f:
             f.write(m_data)
 
+    # 3. Update Info.plist
     if os.path.exists("Info.plist"):
         with open("Info.plist", "rb") as f:
             p_dict = plistlib.load(f)
@@ -163,6 +196,9 @@ def main():
         p_dict["CFBundleName"] = app_name_nospace
         p_dict["CFBundleExecutable"] = app_name_nospace
         p_dict["CFBundleIdentifier"] = bundle_id
+        p_dict["CFBundleShortVersionString"] = version
+        p_dict["CFBundleVersion"] = version
+        p_dict["MinimumOSVersion"] = min_os
         
         domain = web_url.replace("https://", "").replace("http://", "").split("/")[0]
         p_dict["WKAppBoundDomains"] = [domain]
@@ -177,6 +213,7 @@ def main():
         with open("Info.plist", "wb") as f:
             plistlib.dump(p_dict, f)
 
+    # 4. Update ViewController.m
     if os.path.exists("ViewController.m"):
         with open("ViewController.m", "r", encoding="utf-8") as f:
             vc_data = f.read()
@@ -188,13 +225,14 @@ def main():
         with open("ViewController.m", "w", encoding="utf-8") as f:
             f.write(vc_data)
 
+    # 5. Handle HTML
     if html_content is not None:
         os.makedirs("Resources", exist_ok=True)
         with open("Resources/index.html", "w", encoding="utf-8") as f:
             f.write(html_content)
 
     if not os.path.exists("Makefile"):
-        print_banner("❌ LỖI: Không tìm thấy file 'Makefile'!")
+        print_banner(f"{RED}❌ ERROR: 'Makefile' not found!{RESET}")
         sys.exit(1)
 
     try:
@@ -203,9 +241,9 @@ def main():
             subprocess.run(["make", "package"], check=True)
         if build_ipa:
             subprocess.run(["make", "ipa"], check=True)
-        print_banner(t['done'])
+        print_banner(f"{GREEN}{t['done']}{RESET}")
     except subprocess.CalledProcessError:
-        print_banner(t['error'])
+        print_banner(f"{RED}{t['error']}{RESET}")
 
 if __name__ == "__main__":
     main()
