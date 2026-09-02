@@ -16,7 +16,7 @@ Khởi chạy tool bằng lệnh:
 
 Quy trình các bước thực hiện trên Tool
 ## 1. Chọn ngôn ngữ:
-Tool sẽ yêu cầu bạn nhập *`1`* (Tiếng Việt) hoặc *`2`* (English).
+Tool sẽ yêu cầu bạn nhập *`1`* **(Tiếng Việt)** hoặc *`2`* **(English)**.
 
 ## 2. Điền thông tin cơ bản:
 
