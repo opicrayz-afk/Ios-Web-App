@@ -133,7 +133,7 @@ static NSString * const kStartURL = @"https://your website link";
 - (void)webView:(WKWebView *)webView runJavaScriptAlertPanelWithMessage:(NSString *)message initiatedByFrame:(WKFrameInfo *)frame completionHandler:(void (^)(void))completionHandler {
     NSString *title = [[NSBundle mainBundle] objectForInfoDictionaryKey:@"CFBundleDisplayName"];
     UIAlertController *alert = [UIAlertController alertControllerWithTitle:title message:message preferredStyle:UIAlertControllerStyleAlert];
-    [alert addAction:[UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault handler:^(__unused UIAlertAction *action) { completionHandler(); }]];
+    [alert addAction:[UIAlertAction actionWithTitle:@"Chấp Nhận" style:UIAlertActionStyleDefault handler:^(__unused UIAlertAction *action) { completionHandler(); }]];
     [self presentViewController:alert animated:YES completion:nil];
 }
 
@@ -141,7 +141,7 @@ static NSString * const kStartURL = @"https://your website link";
     NSString *title = [[NSBundle mainBundle] objectForInfoDictionaryKey:@"CFBundleDisplayName"];
     UIAlertController *alert = [UIAlertController alertControllerWithTitle:title message:message preferredStyle:UIAlertControllerStyleAlert];
     [alert addAction:[UIAlertAction actionWithTitle:@"Hủy" style:UIAlertActionStyleCancel handler:^(__unused UIAlertAction *action) { completionHandler(NO); }]];
-    [alert addAction:[UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault handler:^(__unused UIAlertAction *action) { completionHandler(YES); }]];
+    [alert addAction:[UIAlertAction actionWithTitle:@"Chấp Nhận" style:UIAlertActionStyleDefault handler:^(__unused UIAlertAction *action) { completionHandler(YES); }]];
     [self presentViewController:alert animated:YES completion:nil];
 }
 
