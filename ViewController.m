@@ -147,18 +147,4 @@ static NSString * const kStartURL = @"https://your website link";
 
 #pragma mark - UIDocumentPickerDelegate
 
-#pragma mark - Intercept Custom URLs (Exit App)
-
-- (void)webView:(WKWebView *)webView decidePolicyForNavigationAction:(WKNavigationAction *)navigationAction decisionHandler:(void (^)(WKNavigationActionPolicy))decisionHandler {
-    NSURL *url = navigationAction.request.URL;
-    
-    if ([url.scheme isEqualToString:@"app"] && [url.host isEqualToString:@"exit"]) {
-        decisionHandler(WKNavigationActionPolicyCancel);
-        exit(0);
-        return;
-    }
-    
-    decisionHandler(WKNavigationActionPolicyAllow);
-}
-
 @end
