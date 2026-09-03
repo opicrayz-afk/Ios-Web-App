@@ -47,8 +47,12 @@
     <true/>
     <key>CFBundleIconFiles</key>
     <array>
-        <string>app_icon.png</string>
+        <string>app_icon.pn g</string>
         <string>app_icon.jpg</string>
+        <string>app_icon.jpeg</string>
+        <string>app_icon.webp</string>
+        <string>app_icon.bmp</string>
+        <string>app_icon.gif</string>
     </array>
     <key>UIDeviceFamily</key>
     <array>
