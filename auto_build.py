@@ -22,7 +22,7 @@ TEXTS = {
         'ask_version': "Nhập Version App (Mặc định: 1.0.0): ",
         'ask_author': "Nhập Tác giả / Maintainer (Mặc định: Developer): ",
         'ask_desc': "Nhập Mô tả ứng dụng: ",
-        'ask_min_os': "Nhập phiên bản iOS tối thiểu - Minimum OS (VD: 13.0): ",
+        'ask_min_os': "Nhập phiên bản iOS tối thiểu - Minimum OS (VD: 14.0): ",
         'html_change': "Bạn có muốn thay đổi trang HTML offline không?",
         'html_mode': "Chọn cách nhập HTML:\n  1. Cung cấp đường dẫn file (.html)\n  2. Nhập/Dán code HTML trực tiếp\nLựa chọn (1 hoặc 2): ",
         'html_path': "Nhập đường dẫn file HTML: ",
@@ -47,7 +47,7 @@ TEXTS = {
         'ask_version': "Enter App Version (Default: 1.0.0): ",
         'ask_author': "Enter Author / Maintainer (Default: Developer): ",
         'ask_desc': "Enter App Description: ",
-        'ask_min_os': "Enter Minimum OS Version (e.g., 13.0): ",
+        'ask_min_os': "Enter Minimum OS Version (e.g., 14.0): ",
         'html_change': "Do you want to change the offline HTML page?",
         'html_mode': "Choose HTML input method:\n  1. Provide a file path (.html)\n  2. Type/Paste raw HTML code\nChoice (1 or 2): ",
         'html_path': "Enter HTML file path: ",
@@ -155,7 +155,7 @@ def main():
     version = ask_input(t['ask_version'], "", mandatory=False, default="1.0.0")
     author = ask_input(t['ask_author'], "", mandatory=False, default="Developer")
     description = ask_input(t['ask_desc'], "", mandatory=False, default="A Web-based iOS Application")
-    min_os = ask_input(t['ask_min_os'], "", mandatory=False, default="13.0")
+    min_os = ask_input(t['ask_min_os'], "", mandatory=False, default="14.0")
 
     domain = web_url.replace("https://", "").replace("http://", "").split("/")[0]
 
@@ -217,7 +217,11 @@ def main():
     if os.path.exists("Makefile"):
         with open("Makefile", "r", encoding="utf-8") as f: m_data = f.read()
         
-        m_data = re.sub(r"TARGET\s*:=\s*iphone:clang:latest:.*", f"TARGET := iphone:clang:latest:{min_os}", m_data)
+        if re.search(r"^TARGET\s*[:]?=", m_data, flags=re.MULTILINE):
+            m_data = re.sub(r"^TARGET\s*[:]?=.*", f"TARGET = iphone:clang:latest:{min_os}", m_data, flags=re.MULTILINE)
+        else:
+            m_data = f"TARGET = iphone:clang:latest:{min_os}\n" + m_data
+
         m_data = re.sub(r"APPLICATION_NAME\s*=\s*.*", f"APPLICATION_NAME = {app_name_nospace}", m_data)
         m_data = re.sub(r"IPA_NAME\s*=\s*.*", f"IPA_NAME = {app_name_nospace}.ipa", m_data)
         
@@ -272,10 +276,11 @@ def main():
         vc_data = re.sub(r'static NSString \* const kStartURL = @".*";', f'static NSString * const kStartURL = @"{web_url}";', vc_data)
         vc_data = re.sub(r'\[origin\.host caseInsensitiveCompare:@".*?"\]', f'[origin.host caseInsensitiveCompare:@"{domain}"]', vc_data)
 
-        # 5.0 Auto-translate Native Alerts based on chosen language
+        # 5.0 Auto-translate Native Alerts
         if lang == 'en':
             vc_data = re.sub(r'actionWithTitle:@"Hủy"', 'actionWithTitle:@"Cancel"', vc_data)
-            vc_data = re.sub(r'actionWithTitle:@"Chấp Nhận"', 'actionWithTitle:@"Accept"', vc_data)
+            # Nhận diện cả "chấp nhận" và "Chấp Nhận" để đổi thành "Accept"
+            vc_data = re.sub(r'actionWithTitle:@"(chấp nhận|Chấp Nhận)"', 'actionWithTitle:@"Accept"', vc_data)
             vc_data = re.sub(
                 r"<h2>Không thể tải nội dung</h2><p>Hãy kiểm tra kết nối mạng và thử lại.</p>", 
                 "<h2>Content Unavailable</h2><p>Please check your internet connection and try again.</p>", 
@@ -284,6 +289,8 @@ def main():
         else:
             vc_data = re.sub(r'actionWithTitle:@"Cancel"', 'actionWithTitle:@"Hủy"', vc_data)
             vc_data = re.sub(r'actionWithTitle:@"Accept"', 'actionWithTitle:@"Chấp Nhận"', vc_data)
+            # Cập nhật chữ viết hoa luôn cho phiên bản thay thế từ tiếng Việt
+            vc_data = re.sub(r'actionWithTitle:@"chấp nhận"', 'actionWithTitle:@"Chấp Nhận"', vc_data)
             vc_data = re.sub(
                 r"<h2>Content Unavailable</h2><p>Please check your internet connection and try again.</p>", 
                 "<h2>Không thể tải nội dung</h2><p>Hãy kiểm tra kết nối mạng và thử lại.</p>", 
