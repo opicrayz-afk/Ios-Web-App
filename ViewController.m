@@ -95,7 +95,7 @@ static NSString * const kStartURL = @"https://your website link";
     NSURL *url = navigationAction.request.URL;
     
     if ([url.scheme isEqualToString:@"app"] && [url.host isEqualToString:@"exit"]) {
-        decisionHandler(WKNavigationActionPolicyCancel); // Hủy việc tải trang này
+        decisionHandler(WKNavigationActionPolicyCancel);
         
         exit(0); 
         return;
