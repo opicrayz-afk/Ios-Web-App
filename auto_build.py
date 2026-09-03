@@ -177,7 +177,6 @@ def main():
                 lines.append(line)
             html_content = "\n".join(lines)
 
-    # Hỏi tính năng chặn URL Thoát ứng dụng
     print()
     enable_exit = ask_yes_no(t['ask_exit'])
 
@@ -273,18 +272,36 @@ def main():
         vc_data = re.sub(r'static NSString \* const kStartURL = @".*";', f'static NSString * const kStartURL = @"{web_url}";', vc_data)
         vc_data = re.sub(r'\[origin\.host caseInsensitiveCompare:@".*?"\]', f'[origin.host caseInsensitiveCompare:@"{domain}"]', vc_data)
 
-        # 5.0 Auto-remove legacy permissions code
+        # 5.0 Auto-translate Native Alerts based on chosen language
+        if lang == 'en':
+            vc_data = re.sub(r'actionWithTitle:@"Hủy"', 'actionWithTitle:@"Cancel"', vc_data)
+            vc_data = re.sub(r'actionWithTitle:@"Chấp Nhận"', 'actionWithTitle:@"Accept"', vc_data)
+            vc_data = re.sub(
+                r"<h2>Không thể tải nội dung</h2><p>Hãy kiểm tra kết nối mạng và thử lại.</p>", 
+                "<h2>Content Unavailable</h2><p>Please check your internet connection and try again.</p>", 
+                vc_data
+            )
+        else:
+            vc_data = re.sub(r'actionWithTitle:@"Cancel"', 'actionWithTitle:@"Hủy"', vc_data)
+            vc_data = re.sub(r'actionWithTitle:@"Accept"', 'actionWithTitle:@"Chấp Nhận"', vc_data)
+            vc_data = re.sub(
+                r"<h2>Content Unavailable</h2><p>Please check your internet connection and try again.</p>", 
+                "<h2>Không thể tải nội dung</h2><p>Hãy kiểm tra kết nối mạng và thử lại.</p>", 
+                vc_data
+            )
+
+        # 5.1 Auto-remove legacy permissions code
         vc_data = re.sub(r'\s*\[self requestMediaPermissionsIfNeeded\];', '', vc_data)
         vc_data = re.sub(r'- \(void\)requestMediaPermissionsIfNeeded\s*\{.*?\n\}\n*(?=-|\@end)', '', vc_data, flags=re.DOTALL)
 
-        # 5.1 Handle Imports
+        # 5.2 Handle Imports
         import_block = "// --- AUTO_INJECT_IMPORTS_START ---\n" + "\n".join([f"#import {i}" for i in needed_imports]) + "\n// --- AUTO_INJECT_IMPORTS_END ---\n"
         if "// --- AUTO_INJECT_IMPORTS_START ---" in vc_data:
             vc_data = re.sub(r"// --- AUTO_INJECT_IMPORTS_START ---.*?// --- AUTO_INJECT_IMPORTS_END ---\n?", import_block if needed_imports else "", vc_data, flags=re.DOTALL)
         elif needed_imports:
             vc_data = re.sub(r'(#import "ViewController\.h"|#import <UIKit/UIKit\.h>)', r'\1\n' + import_block, vc_data, count=1)
 
-        # 5.2 Handle Interface
+        # 5.3 Handle Interface
         interface_content = "\n".join(needed_interfaces)
         interface_block = f"// --- AUTO_INJECT_INTERFACE_START ---\n@interface ViewController ()\n{interface_content}\n@end\n// --- AUTO_INJECT_INTERFACE_END ---\n"
         if "// --- AUTO_INJECT_INTERFACE_START ---" in vc_data:
@@ -292,7 +309,7 @@ def main():
         elif needed_interfaces:
             vc_data = re.sub(r'(@implementation ViewController)', interface_block + r'\n\1', vc_data, count=1)
 
-        # 5.3 Handle Permissions Method
+        # 5.4 Handle Permissions Method
         method_content = "\n    ".join(needed_codes)
         method_block = f"// --- AUTO_INJECT_METHOD_START ---\n- (void)requestAllPermissions {{\n    {method_content}\n}}\n// --- AUTO_INJECT_METHOD_END ---\n"
         if "// --- AUTO_INJECT_METHOD_START ---" in vc_data:
@@ -300,14 +317,14 @@ def main():
         elif needed_codes:
             vc_data = re.sub(r'(@implementation ViewController)', r'\1\n' + method_block, vc_data, count=1)
 
-        # 5.4 Call permissions inside viewDidLoad
+        # 5.5 Call permissions inside viewDidLoad
         call_stmt = "    [self requestAllPermissions]; // AUTO_INJECT_CALL"
         if "// AUTO_INJECT_CALL" not in vc_data and needed_codes:
             vc_data = re.sub(r'(- \(void\)viewDidLoad\s*\{)', r'\1\n' + call_stmt, vc_data, count=1)
         elif not needed_codes and "// AUTO_INJECT_CALL" in vc_data:
             vc_data = re.sub(r'\s*\[self requestAllPermissions\]; // AUTO_INJECT_CALL\n?', '', vc_data)
 
-        # 5.5 Handle Exit App Feature (Custom URL Interception)
+        # 5.6 Handle Exit App Feature
         exit_block = """
 // --- AUTO_INJECT_EXIT_START ---
 - (void)webView:(WKWebView *)webView decidePolicyForNavigationAction:(WKNavigationAction *)navigationAction decisionHandler:(void (^)(WKNavigationActionPolicy))decisionHandler {
@@ -324,7 +341,6 @@ def main():
         if "// --- AUTO_INJECT_EXIT_START ---" in vc_data:
             vc_data = re.sub(r"\n?// --- AUTO_INJECT_EXIT_START ---.*?// --- AUTO_INJECT_EXIT_END ---\n?", exit_block if enable_exit else "\n", vc_data, flags=re.DOTALL)
         elif enable_exit:
-            # Chèn khối mã exit vào ngay trước thẻ @end cuối cùng của file
             parts = vc_data.rsplit("@end", 1)
             if len(parts) == 2:
                 vc_data = parts[0] + exit_block + "@end\n"
