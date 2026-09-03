@@ -279,7 +279,6 @@ def main():
         # 5.0 Auto-translate Native Alerts
         if lang == 'en':
             vc_data = re.sub(r'actionWithTitle:@"Hủy"', 'actionWithTitle:@"Cancel"', vc_data)
-            # Nhận diện cả "chấp nhận" và "Chấp Nhận" để đổi thành "Accept"
             vc_data = re.sub(r'actionWithTitle:@"(chấp nhận|Chấp Nhận)"', 'actionWithTitle:@"Accept"', vc_data)
             vc_data = re.sub(
                 r"<h2>Không thể tải nội dung</h2><p>Hãy kiểm tra kết nối mạng và thử lại.</p>", 
@@ -289,7 +288,6 @@ def main():
         else:
             vc_data = re.sub(r'actionWithTitle:@"Cancel"', 'actionWithTitle:@"Hủy"', vc_data)
             vc_data = re.sub(r'actionWithTitle:@"Accept"', 'actionWithTitle:@"Chấp Nhận"', vc_data)
-            # Cập nhật chữ viết hoa luôn cho phiên bản thay thế từ tiếng Việt
             vc_data = re.sub(r'actionWithTitle:@"chấp nhận"', 'actionWithTitle:@"Chấp Nhận"', vc_data)
             vc_data = re.sub(
                 r"<h2>Content Unavailable</h2><p>Please check your internet connection and try again.</p>", 
@@ -301,14 +299,17 @@ def main():
         vc_data = re.sub(r'\s*\[self requestMediaPermissionsIfNeeded\];', '', vc_data)
         vc_data = re.sub(r'- \(void\)requestMediaPermissionsIfNeeded\s*\{.*?\n\}\n*(?=-|\@end)', '', vc_data, flags=re.DOTALL)
 
-        # 5.2 Handle Imports
+        # 5.2 XÓA CODE THỦ CÔNG: Tìm và diệt đoạn code "Exit App" thủ công bạn từng paste vào để tránh bị Duplicate
+        vc_data = re.sub(r'#pragma mark - Intercept Custom URLs \(Exit App\).*?decisionHandler\(WKNavigationActionPolicyAllow\);\s*\}\s*', '', vc_data, flags=re.DOTALL)
+
+        # 5.3 Handle Imports
         import_block = "// --- AUTO_INJECT_IMPORTS_START ---\n" + "\n".join([f"#import {i}" for i in needed_imports]) + "\n// --- AUTO_INJECT_IMPORTS_END ---\n"
         if "// --- AUTO_INJECT_IMPORTS_START ---" in vc_data:
             vc_data = re.sub(r"// --- AUTO_INJECT_IMPORTS_START ---.*?// --- AUTO_INJECT_IMPORTS_END ---\n?", import_block if needed_imports else "", vc_data, flags=re.DOTALL)
         elif needed_imports:
             vc_data = re.sub(r'(#import "ViewController\.h"|#import <UIKit/UIKit\.h>)', r'\1\n' + import_block, vc_data, count=1)
 
-        # 5.3 Handle Interface
+        # 5.4 Handle Interface
         interface_content = "\n".join(needed_interfaces)
         interface_block = f"// --- AUTO_INJECT_INTERFACE_START ---\n@interface ViewController ()\n{interface_content}\n@end\n// --- AUTO_INJECT_INTERFACE_END ---\n"
         if "// --- AUTO_INJECT_INTERFACE_START ---" in vc_data:
@@ -316,7 +317,7 @@ def main():
         elif needed_interfaces:
             vc_data = re.sub(r'(@implementation ViewController)', interface_block + r'\n\1', vc_data, count=1)
 
-        # 5.4 Handle Permissions Method
+        # 5.5 Handle Permissions Method
         method_content = "\n    ".join(needed_codes)
         method_block = f"// --- AUTO_INJECT_METHOD_START ---\n- (void)requestAllPermissions {{\n    {method_content}\n}}\n// --- AUTO_INJECT_METHOD_END ---\n"
         if "// --- AUTO_INJECT_METHOD_START ---" in vc_data:
@@ -324,14 +325,14 @@ def main():
         elif needed_codes:
             vc_data = re.sub(r'(@implementation ViewController)', r'\1\n' + method_block, vc_data, count=1)
 
-        # 5.5 Call permissions inside viewDidLoad
+        # 5.6 Call permissions inside viewDidLoad
         call_stmt = "    [self requestAllPermissions]; // AUTO_INJECT_CALL"
         if "// AUTO_INJECT_CALL" not in vc_data and needed_codes:
             vc_data = re.sub(r'(- \(void\)viewDidLoad\s*\{)', r'\1\n' + call_stmt, vc_data, count=1)
         elif not needed_codes and "// AUTO_INJECT_CALL" in vc_data:
             vc_data = re.sub(r'\s*\[self requestAllPermissions\]; // AUTO_INJECT_CALL\n?', '', vc_data)
 
-        # 5.6 Handle Exit App Feature
+        # 5.7 Handle Exit App Feature
         exit_block = """
 // --- AUTO_INJECT_EXIT_START ---
 - (void)webView:(WKWebView *)webView decidePolicyForNavigationAction:(WKNavigationAction *)navigationAction decisionHandler:(void (^)(WKNavigationActionPolicy))decisionHandler {
