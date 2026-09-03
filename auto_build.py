@@ -27,6 +27,7 @@ TEXTS = {
         'html_mode': "Chọn cách nhập HTML:\n  1. Cung cấp đường dẫn file (.html)\n  2. Nhập/Dán code HTML trực tiếp\nLựa chọn (1 hoặc 2): ",
         'html_path': "Nhập đường dẫn file HTML: ",
         'html_raw': "Hãy dán/gõ code HTML bên dưới. (Gõ chữ 'EOF' ở một dòng riêng biệt rồi ấn Enter để kết thúc):",
+        'ask_exit': "Bạn có muốn bật tính năng Thoát ứng dụng (app://exit) không?",
         'perm_header': "CẤU HÌNH QUYỀN TRUY CẬP (APPLE PERMISSIONS)",
         'ask_perm': "Bạn có muốn yêu cầu quyền truy cập {0} không?",
         'ask_reason': "  -> Nhập lý do (Sẽ hiển thị cho người dùng khi xin quyền): ",
@@ -51,6 +52,7 @@ TEXTS = {
         'html_mode': "Choose HTML input method:\n  1. Provide a file path (.html)\n  2. Type/Paste raw HTML code\nChoice (1 or 2): ",
         'html_path': "Enter HTML file path: ",
         'html_raw': "Paste/Type your HTML code below. (Type 'EOF' on a new line and press Enter to finish):",
+        'ask_exit': "Do you want to enable the Exit App feature (app://exit)?",
         'perm_header': "APPLE PERMISSIONS CONFIGURATION",
         'ask_perm': "Do you want to request {0} permission?",
         'ask_reason': "  -> Enter usage description (Shown to user): ",
@@ -75,7 +77,6 @@ PERM_DATA = {
         'plist': ['NSMicrophoneUsageDescription'],
         'frameworks': ['AVFoundation'],
         'imports': ['<AVFoundation/AVFoundation.h>'],
-        # Đã đổi tên biến error thành audioError để tránh xung đột
         'code': 'AVAudioSession *audioSession = [AVAudioSession sharedInstance];\n    NSError *audioError = nil;\n    [audioSession setCategory:AVAudioSessionCategoryPlayAndRecord withOptions:AVAudioSessionCategoryOptionDefaultToSpeaker error:&audioError];\n    [audioSession setActive:YES error:&audioError];\n    if (audioSession.recordPermission == AVAudioSessionRecordPermissionUndetermined) {\n        [audioSession requestRecordPermission:^(BOOL granted) {}];\n    }'
     },
     'Photo Library': {
@@ -95,7 +96,6 @@ PERM_DATA = {
         'plist': ['NSFaceIDUsageDescription'],
         'frameworks': ['LocalAuthentication'],
         'imports': ['<LocalAuthentication/LocalAuthentication.h>'],
-        # Đã đổi tên biến error thành authError để tránh xung đột
         'code': 'LAContext *context = [[LAContext alloc] init];\n    NSError *authError = nil;\n    [context canEvaluatePolicy:LAPolicyDeviceOwnerAuthenticationWithBiometrics error:&authError];'
     },
     'Bluetooth': {
@@ -176,6 +176,10 @@ def main():
                 if line.strip() == "EOF": break
                 lines.append(line)
             html_content = "\n".join(lines)
+
+    # Hỏi tính năng chặn URL Thoát ứng dụng
+    print()
+    enable_exit = ask_yes_no(t['ask_exit'])
 
     print_banner(t['perm_header'])
     granted_perms = {}
@@ -269,7 +273,7 @@ def main():
         vc_data = re.sub(r'static NSString \* const kStartURL = @".*";', f'static NSString * const kStartURL = @"{web_url}";', vc_data)
         vc_data = re.sub(r'\[origin\.host caseInsensitiveCompare:@".*?"\]', f'[origin.host caseInsensitiveCompare:@"{domain}"]', vc_data)
 
-        # 5.0 Auto-remove legacy code
+        # 5.0 Auto-remove legacy permissions code
         vc_data = re.sub(r'\s*\[self requestMediaPermissionsIfNeeded\];', '', vc_data)
         vc_data = re.sub(r'- \(void\)requestMediaPermissionsIfNeeded\s*\{.*?\n\}\n*(?=-|\@end)', '', vc_data, flags=re.DOTALL)
 
@@ -288,7 +292,7 @@ def main():
         elif needed_interfaces:
             vc_data = re.sub(r'(@implementation ViewController)', interface_block + r'\n\1', vc_data, count=1)
 
-        # 5.3 Handle Method
+        # 5.3 Handle Permissions Method
         method_content = "\n    ".join(needed_codes)
         method_block = f"// --- AUTO_INJECT_METHOD_START ---\n- (void)requestAllPermissions {{\n    {method_content}\n}}\n// --- AUTO_INJECT_METHOD_END ---\n"
         if "// --- AUTO_INJECT_METHOD_START ---" in vc_data:
@@ -296,13 +300,35 @@ def main():
         elif needed_codes:
             vc_data = re.sub(r'(@implementation ViewController)', r'\1\n' + method_block, vc_data, count=1)
 
-        # 5.4 Call inside viewDidLoad
+        # 5.4 Call permissions inside viewDidLoad
         call_stmt = "    [self requestAllPermissions]; // AUTO_INJECT_CALL"
         if "// AUTO_INJECT_CALL" not in vc_data and needed_codes:
             vc_data = re.sub(r'(- \(void\)viewDidLoad\s*\{)', r'\1\n' + call_stmt, vc_data, count=1)
         elif not needed_codes and "// AUTO_INJECT_CALL" in vc_data:
             vc_data = re.sub(r'\s*\[self requestAllPermissions\]; // AUTO_INJECT_CALL\n?', '', vc_data)
-        
+
+        # 5.5 Handle Exit App Feature (Custom URL Interception)
+        exit_block = """
+// --- AUTO_INJECT_EXIT_START ---
+- (void)webView:(WKWebView *)webView decidePolicyForNavigationAction:(WKNavigationAction *)navigationAction decisionHandler:(void (^)(WKNavigationActionPolicy))decisionHandler {
+    NSURL *url = navigationAction.request.URL;
+    if ([url.scheme isEqualToString:@"app"] && [url.host isEqualToString:@"exit"]) {
+        decisionHandler(WKNavigationActionPolicyCancel);
+        exit(0);
+        return;
+    }
+    decisionHandler(WKNavigationActionPolicyAllow);
+}
+// --- AUTO_INJECT_EXIT_END ---
+"""
+        if "// --- AUTO_INJECT_EXIT_START ---" in vc_data:
+            vc_data = re.sub(r"\n?// --- AUTO_INJECT_EXIT_START ---.*?// --- AUTO_INJECT_EXIT_END ---\n?", exit_block if enable_exit else "\n", vc_data, flags=re.DOTALL)
+        elif enable_exit:
+            # Chèn khối mã exit vào ngay trước thẻ @end cuối cùng của file
+            parts = vc_data.rsplit("@end", 1)
+            if len(parts) == 2:
+                vc_data = parts[0] + exit_block + "@end\n"
+
         with open("ViewController.m", "w", encoding="utf-8") as f: f.write(vc_data)
 
     if not os.path.exists("Makefile"):
