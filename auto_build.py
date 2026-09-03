@@ -34,6 +34,7 @@ TEXTS = {
         'build_deb': "Bạn có muốn build file DEB (Dành cho máy Jailbreak) không?",
         'build_ipa': "Bạn có muốn build file IPA (Dành cho Sideload/TrollStore) không?",
         'processing': "ĐANG TIÊM MÃ NATIVE & XỬ LÝ BUILD...",
+        'restoring': "ĐANG KHÔI PHỤC MÃ NGUỒN VỀ TRẠNG THÁI GỐC...",
         'done': "HOÀN TẤT! Quá trình thành công.",
         'error': "LỖI: Xảy ra sự cố trong quá trình build.",
         'err_req': "Đây là trường bắt buộc. Vui lòng nhập dữ liệu!",
@@ -59,6 +60,7 @@ TEXTS = {
         'build_deb': "Do you want to build a DEB file (For Jailbroken devices)?",
         'build_ipa': "Do you want to build an IPA file (For Sideload/TrollStore)?",
         'processing': "INJECTING NATIVE CODE & PROCESSING BUILD...",
+        'restoring': "RESTORING ORIGINAL SOURCE CODE...",
         'done': "DONE! Build completed successfully.",
         'error': "ERROR: An issue occurred during the build process.",
         'err_req': "This is a required field. Please enter a value!",
@@ -119,6 +121,9 @@ PERM_DATA = {
     }
 }
 
+# Độ ưu tiên của định dạng ảnh App Icon
+ICON_EXT_PRIORITY = ['.png', '.jpg', '.jpeg', '.webp', '.bmp', '.gif']
+
 def print_banner(text):
     print(f"\n{CYAN}{'='*60}{RESET}\n{BOLD}{CYAN}{text.center(60)}{RESET}\n{CYAN}{'='*60}{RESET}\n")
 
@@ -135,6 +140,35 @@ def ask_yes_no(prompt):
         if ans in ['y', 'yes']: return True
         elif ans in ['n', 'no']: return False
 
+def backup_original_files():
+    """Sao lưu các file gốc vào bộ nhớ (RAM) trước khi thay đổi."""
+    backups = {}
+    files_to_backup = ["control", "Makefile", "Info.plist", "ViewController.m", "Resources/index.html"]
+    
+    # Tự động quét và đưa toàn bộ các file app_icon gốc vào danh sách backup
+    if os.path.exists("Resources"):
+        for f_name in os.listdir("Resources"):
+            if f_name.lower().startswith("app_icon") and os.path.isfile(os.path.join("Resources", f_name)):
+                files_to_backup.append(os.path.join("Resources", f_name))
+                
+    for file_path in files_to_backup:
+        if os.path.exists(file_path):
+            # Đọc dưới dạng Binary (rb) để không làm hỏng file ảnh
+            with open(file_path, "rb") as f:
+                backups[file_path] = f.read()
+    return backups
+
+def restore_original_files(backups, t_msg):
+    """Khôi phục lại toàn bộ file gốc từ bộ nhớ (RAM)."""
+    print_banner(t_msg)
+    for file_path, content in backups.items():
+        if os.path.dirname(file_path):
+            os.makedirs(os.path.dirname(file_path), exist_ok=True)
+        # Ghi lại dưới dạng Binary (wb) để nguyên vẹn cả ảnh và code
+        with open(file_path, "wb") as f:
+            f.write(content)
+    print(f"{GREEN}✅ Đã khôi phục hoàn tất mã nguồn và Icon gốc.{RESET}")
+
 def main():
     print(f"{BOLD}Select Language / Chọn ngôn ngữ:{RESET}\n1. Tiếng Việt\n2. English")
     lang_choice = input("Choice (1/2): ").strip()
@@ -147,6 +181,9 @@ def main():
 
     os.chdir(os.path.dirname(os.path.abspath(__file__)))
     print_banner(t['header'])
+
+    # --- BƯỚC QUAN TRỌNG: BACKUP FILE GỐC TRƯỚC KHI HỎI BẤT KỲ THỨ GÌ ---
+    original_backups = backup_original_files()
 
     app_name = ask_input(t['ask_app_name'], t['err_req'])
     app_name_nospace = "".join(e for e in app_name if e.isalnum())
@@ -201,139 +238,163 @@ def main():
     build_ipa = ask_yes_no(t['build_ipa'])
     print_banner(t['processing'])
 
-    # 1. Update control
-    if os.path.exists("control"):
-        with open("control", "r", encoding="utf-8") as f: c_data = f.read()
-        c_data = re.sub(r"Package:.*", f"Package: {bundle_id}", c_data)
-        c_data = re.sub(r"Name:.*", f"Name: {app_name}", c_data)
-        c_data = re.sub(r"Version:.*", f"Version: {version}", c_data)
-        c_data = re.sub(r"Description:.*", f"Description: {description}", c_data)
-        c_data = re.sub(r"Maintainer:.*", f"Maintainer: {author}", c_data)
-        c_data = re.sub(r"Author:.*", f"Author: {author}", c_data)
-        c_data = re.sub(r"Depends: firmware \(>= .*\)", f"Depends: firmware (>= {min_os})", c_data)
-        with open("control", "w", encoding="utf-8") as f: f.write(c_data)
+    try:
+        # 1. Update control
+        if os.path.exists("control"):
+            with open("control", "r", encoding="utf-8") as f: c_data = f.read()
+            c_data = re.sub(r"Package:.*", f"Package: {bundle_id}", c_data)
+            c_data = re.sub(r"Name:.*", f"Name: {app_name}", c_data)
+            c_data = re.sub(r"Version:.*", f"Version: {version}", c_data)
+            c_data = re.sub(r"Description:.*", f"Description: {description}", c_data)
+            c_data = re.sub(r"Maintainer:.*", f"Maintainer: {author}", c_data)
+            c_data = re.sub(r"Author:.*", f"Author: {author}", c_data)
+            c_data = re.sub(r"Depends: firmware \(>= .*\)", f"Depends: firmware (>= {min_os})", c_data)
+            with open("control", "w", encoding="utf-8") as f: f.write(c_data)
 
-    # 2. Update Makefile
-    if os.path.exists("Makefile"):
-        with open("Makefile", "r", encoding="utf-8") as f: m_data = f.read()
-        
-        if re.search(r"^TARGET\s*[:]?=", m_data, flags=re.MULTILINE):
-            m_data = re.sub(r"^TARGET\s*[:]?=.*", f"TARGET = iphone:clang:latest:{min_os}", m_data, flags=re.MULTILINE)
-        else:
-            m_data = f"TARGET = iphone:clang:latest:{min_os}\n" + m_data
-
-        m_data = re.sub(r"APPLICATION_NAME\s*=\s*.*", f"APPLICATION_NAME = {app_name_nospace}", m_data)
-        m_data = re.sub(r"IPA_NAME\s*=\s*.*", f"IPA_NAME = {app_name_nospace}.ipa", m_data)
-        
-        frameworks_str = "UIKit WebKit " + " ".join(needed_frameworks)
-        
-        m_data = re.sub(r"^[a-zA-Z0-9]+_FILES\s*=.*", f"{app_name_nospace}_FILES = main.m AppDelegate.m ViewController.m", m_data, flags=re.MULTILINE)
-        m_data = re.sub(r"^[a-zA-Z0-9]+_FRAMEWORKS\s*=.*", f"{app_name_nospace}_FRAMEWORKS = {frameworks_str}", m_data, flags=re.MULTILINE)
-        m_data = re.sub(r"^[a-zA-Z0-9]+_CFLAGS\s*=.*", f"{app_name_nospace}_CFLAGS = -fobjc-arc -Wno-deprecated-declarations -Wno-error", m_data, flags=re.MULTILINE)
-        m_data = re.sub(r"^[a-zA-Z0-9]+_BUNDLE_RESOURCES\s*=.*", f"{app_name_nospace}_BUNDLE_RESOURCES = Info.plist", m_data, flags=re.MULTILINE)
-        m_data = re.sub(r"^[a-zA-Z0-9]+_BUNDLE_RESOURCE_DIRS\s*=.*", f"{app_name_nospace}_BUNDLE_RESOURCE_DIRS = Resources", m_data, flags=re.MULTILINE)
-        m_data = re.sub(r"^[a-zA-Z0-9]+_INSTALL_PATH\s*=.*", f"{app_name_nospace}_INSTALL_PATH = /Applications", m_data, flags=re.MULTILINE)
-
-        with open("Makefile", "w", encoding="utf-8") as f: f.write(m_data)
-
-    # 3. Handle HTML & Clean up Resources
-    os.makedirs("Resources", exist_ok=True)
-    if html_content is not None:
-        with open("Resources/index.html", "w", encoding="utf-8") as f: f.write(html_content)
-
-    icon_png, icon_jpg = os.path.join("Resources", "app_icon.png"), os.path.join("Resources", "app_icon.jpg")
-    if os.path.exists(icon_png) and os.path.exists(icon_jpg):
-        os.remove(icon_jpg)
-    for f_name in os.listdir("Resources"):
-        f_path = os.path.join("Resources", f_name)
-        if os.path.isfile(f_path) and (f_name.lower().endswith(('.txt', '.md', '.rtf')) or "choose one" in f_name.lower() or "png and jpg" in f_name.lower()):
-            os.remove(f_path)
-
-    # 4. Update Info.plist
-    if os.path.exists("Info.plist"):
-        with open("Info.plist", "rb") as f: p_dict = plistlib.load(f)
-        
-        p_dict["CFBundleDisplayName"] = app_name
-        p_dict["CFBundleName"] = app_name_nospace
-        p_dict["CFBundleExecutable"] = app_name_nospace
-        p_dict["CFBundleIdentifier"] = bundle_id
-        p_dict["CFBundleShortVersionString"] = version
-        p_dict["CFBundleVersion"] = version
-        p_dict["MinimumOSVersion"] = min_os
-        p_dict["WKAppBoundDomains"] = [domain]
-        p_dict["CFBundleIconFiles"] = ["app_icon.png"] if os.path.exists(icon_png) else ["app_icon.jpg"] if os.path.exists(icon_jpg) else ["app_icon.png"]
-
-        for perm_list in PERM_DATA.values():
-            for k in perm_list['plist']: p_dict.pop(k, None)
-        for k, v in granted_perms.items(): p_dict[k] = v
-
-        with open("Info.plist", "wb") as f: plistlib.dump(p_dict, f)
-
-    # 5. Inject Objective-C Code
-    if os.path.exists("ViewController.m"):
-        with open("ViewController.m", "r", encoding="utf-8") as f: vc_data = f.read()
+        # 2. Update Makefile
+        if os.path.exists("Makefile"):
+            with open("Makefile", "r", encoding="utf-8") as f: m_data = f.read()
             
-        vc_data = re.sub(r'static NSString \* const kStartURL = @".*";', f'static NSString * const kStartURL = @"{web_url}";', vc_data)
-        vc_data = re.sub(r'\[origin\.host caseInsensitiveCompare:@".*?"\]', f'[origin.host caseInsensitiveCompare:@"{domain}"]', vc_data)
+            if re.search(r"^TARGET\s*[:]?=", m_data, flags=re.MULTILINE):
+                m_data = re.sub(r"^TARGET\s*[:]?=.*", f"TARGET = iphone:clang:latest:{min_os}", m_data, flags=re.MULTILINE)
+            else:
+                m_data = f"TARGET = iphone:clang:latest:{min_os}\n" + m_data
 
-        # 5.0 Auto-translate Native Alerts
-        if lang == 'en':
-            vc_data = re.sub(r'actionWithTitle:@"Hủy"', 'actionWithTitle:@"Cancel"', vc_data)
-            vc_data = re.sub(r'actionWithTitle:@"(chấp nhận|Chấp Nhận)"', 'actionWithTitle:@"Accept"', vc_data)
-            vc_data = re.sub(
-                r"<h2>Không thể tải nội dung</h2><p>Hãy kiểm tra kết nối mạng và thử lại.</p>", 
-                "<h2>Content Unavailable</h2><p>Please check your internet connection and try again.</p>", 
-                vc_data
-            )
-        else:
-            vc_data = re.sub(r'actionWithTitle:@"Cancel"', 'actionWithTitle:@"Hủy"', vc_data)
-            vc_data = re.sub(r'actionWithTitle:@"Accept"', 'actionWithTitle:@"Chấp Nhận"', vc_data)
-            vc_data = re.sub(r'actionWithTitle:@"chấp nhận"', 'actionWithTitle:@"Chấp Nhận"', vc_data)
-            vc_data = re.sub(
-                r"<h2>Content Unavailable</h2><p>Please check your internet connection and try again.</p>", 
-                "<h2>Không thể tải nội dung</h2><p>Hãy kiểm tra kết nối mạng và thử lại.</p>", 
-                vc_data
-            )
+            m_data = re.sub(r"APPLICATION_NAME\s*=\s*.*", f"APPLICATION_NAME = {app_name_nospace}", m_data)
+            m_data = re.sub(r"IPA_NAME\s*=\s*.*", f"IPA_NAME = {app_name_nospace}.ipa", m_data)
+            
+            frameworks_str = "UIKit WebKit " + " ".join(needed_frameworks)
+            
+            m_data = re.sub(r"^[a-zA-Z0-9]+_FILES\s*=.*", f"{app_name_nospace}_FILES = main.m AppDelegate.m ViewController.m", m_data, flags=re.MULTILINE)
+            m_data = re.sub(r"^[a-zA-Z0-9]+_FRAMEWORKS\s*=.*", f"{app_name_nospace}_FRAMEWORKS = {frameworks_str}", m_data, flags=re.MULTILINE)
+            m_data = re.sub(r"^[a-zA-Z0-9]+_CFLAGS\s*=.*", f"{app_name_nospace}_CFLAGS = -fobjc-arc -Wno-deprecated-declarations -Wno-error", m_data, flags=re.MULTILINE)
+            m_data = re.sub(r"^[a-zA-Z0-9]+_BUNDLE_RESOURCES\s*=.*", f"{app_name_nospace}_BUNDLE_RESOURCES = Info.plist", m_data, flags=re.MULTILINE)
+            m_data = re.sub(r"^[a-zA-Z0-9]+_BUNDLE_RESOURCE_DIRS\s*=.*", f"{app_name_nospace}_BUNDLE_RESOURCE_DIRS = Resources", m_data, flags=re.MULTILINE)
+            m_data = re.sub(r"^[a-zA-Z0-9]+_INSTALL_PATH\s*=.*", f"{app_name_nospace}_INSTALL_PATH = /Applications", m_data, flags=re.MULTILINE)
 
-        # 5.1 Auto-remove legacy permissions code
-        vc_data = re.sub(r'\s*\[self requestMediaPermissionsIfNeeded\];', '', vc_data)
-        vc_data = re.sub(r'- \(void\)requestMediaPermissionsIfNeeded\s*\{.*?\n\}\n*(?=-|\@end)', '', vc_data, flags=re.DOTALL)
+            with open("Makefile", "w", encoding="utf-8") as f: f.write(m_data)
 
-        # 5.2 XÓA CODE THỦ CÔNG: Tìm và diệt đoạn code "Exit App" thủ công bạn từng paste vào để tránh bị Duplicate
-        vc_data = re.sub(r'#pragma mark - Intercept Custom URLs \(Exit App\).*?decisionHandler\(WKNavigationActionPolicyAllow\);\s*\}\s*', '', vc_data, flags=re.DOTALL)
+        # 3. Handle HTML, Smart Icon & Clean up Resources
+        os.makedirs("Resources", exist_ok=True)
+        if html_content is not None:
+            with open("Resources/index.html", "w", encoding="utf-8") as f: f.write(html_content)
 
-        # 5.3 Handle Imports
-        import_block = "// --- AUTO_INJECT_IMPORTS_START ---\n" + "\n".join([f"#import {i}" for i in needed_imports]) + "\n// --- AUTO_INJECT_IMPORTS_END ---\n"
-        if "// --- AUTO_INJECT_IMPORTS_START ---" in vc_data:
-            vc_data = re.sub(r"// --- AUTO_INJECT_IMPORTS_START ---.*?// --- AUTO_INJECT_IMPORTS_END ---\n?", import_block if needed_imports else "", vc_data, flags=re.DOTALL)
-        elif needed_imports:
-            vc_data = re.sub(r'(#import "ViewController\.h"|#import <UIKit/UIKit\.h>)', r'\1\n' + import_block, vc_data, count=1)
+        found_icons = []
+        for f_name in os.listdir("Resources"):
+            f_path = os.path.join("Resources", f_name)
+            if os.path.isfile(f_path):
+                name_lower = f_name.lower()
+                
+                # Dọn dẹp rác hệ điều hành
+                if ":zone.identifier" in name_lower or name_lower == ".ds_store" or re.search(r"\(\d+\)\.(png|jpg|jpeg|webp|bmp|gif)", name_lower):
+                    os.remove(f_path)
+                    continue
+                    
+                # Dọn dẹp file text thừa
+                if name_lower.endswith(('.txt', '.md', '.rtf')) or "choose one" in name_lower or "png and jpg" in name_lower:
+                    os.remove(f_path)
+                    continue
 
-        # 5.4 Handle Interface
-        interface_content = "\n".join(needed_interfaces)
-        interface_block = f"// --- AUTO_INJECT_INTERFACE_START ---\n@interface ViewController ()\n{interface_content}\n@end\n// --- AUTO_INJECT_INTERFACE_END ---\n"
-        if "// --- AUTO_INJECT_INTERFACE_START ---" in vc_data:
-            vc_data = re.sub(r"// --- AUTO_INJECT_INTERFACE_START ---.*?// --- AUTO_INJECT_INTERFACE_END ---\n?", interface_block if needed_interfaces else "", vc_data, flags=re.DOTALL)
-        elif needed_interfaces:
-            vc_data = re.sub(r'(@implementation ViewController)', interface_block + r'\n\1', vc_data, count=1)
+                # Thu thập các file icon hợp lệ
+                if name_lower.startswith("app_icon"):
+                    ext = os.path.splitext(name_lower)[1]
+                    if ext in ICON_EXT_PRIORITY:
+                        found_icons.append(f_name)
 
-        # 5.5 Handle Permissions Method
-        method_content = "\n    ".join(needed_codes)
-        method_block = f"// --- AUTO_INJECT_METHOD_START ---\n- (void)requestAllPermissions {{\n    {method_content}\n}}\n// --- AUTO_INJECT_METHOD_END ---\n"
-        if "// --- AUTO_INJECT_METHOD_START ---" in vc_data:
-            vc_data = re.sub(r"// --- AUTO_INJECT_METHOD_START ---.*?// --- AUTO_INJECT_METHOD_END ---\n?", method_block if needed_codes else "", vc_data, flags=re.DOTALL)
-        elif needed_codes:
-            vc_data = re.sub(r'(@implementation ViewController)', r'\1\n' + method_block, vc_data, count=1)
+        # Bộ lọc ưu tiên định dạng ảnh thông minh
+        final_icon_name = "app_icon.png"
+        if found_icons:
+            found_icons.sort(key=lambda x: ICON_EXT_PRIORITY.index(os.path.splitext(x.lower())[1]))
+            final_icon_name = found_icons[0] # Lấy file có độ ưu tiên cao nhất
+            
+            # Xóa sạch các icon có độ ưu tiên thấp hơn (tránh nặng app)
+            for duplicate_icon in found_icons[1:]:
+                os.remove(os.path.join("Resources", duplicate_icon))
+                print(f"{YELLOW}⚠️  Removed lower priority icon: {duplicate_icon}{RESET}")
 
-        # 5.6 Call permissions inside viewDidLoad
-        call_stmt = "    [self requestAllPermissions]; // AUTO_INJECT_CALL"
-        if "// AUTO_INJECT_CALL" not in vc_data and needed_codes:
-            vc_data = re.sub(r'(- \(void\)viewDidLoad\s*\{)', r'\1\n' + call_stmt, vc_data, count=1)
-        elif not needed_codes and "// AUTO_INJECT_CALL" in vc_data:
-            vc_data = re.sub(r'\s*\[self requestAllPermissions\]; // AUTO_INJECT_CALL\n?', '', vc_data)
+        # 4. Update Info.plist
+        if os.path.exists("Info.plist"):
+            with open("Info.plist", "rb") as f: p_dict = plistlib.load(f)
+            
+            p_dict["CFBundleDisplayName"] = app_name
+            p_dict["CFBundleName"] = app_name_nospace
+            p_dict["CFBundleExecutable"] = app_name_nospace
+            p_dict["CFBundleIdentifier"] = bundle_id
+            p_dict["CFBundleShortVersionString"] = version
+            p_dict["CFBundleVersion"] = version
+            p_dict["MinimumOSVersion"] = min_os
+            p_dict["WKAppBoundDomains"] = [domain]
+            p_dict["CFBundleIconFiles"] = [final_icon_name] # Tự động nhét đúng tên icon vừa lấy được
 
-        # 5.7 Handle Exit App Feature
-        exit_block = """
+            for perm_list in PERM_DATA.values():
+                for k in perm_list['plist']: p_dict.pop(k, None)
+            for k, v in granted_perms.items(): p_dict[k] = v
+
+            with open("Info.plist", "wb") as f: plistlib.dump(p_dict, f)
+
+        # 5. Inject Objective-C Code
+        if os.path.exists("ViewController.m"):
+            with open("ViewController.m", "r", encoding="utf-8") as f: vc_data = f.read()
+                
+            vc_data = re.sub(r'static NSString \* const kStartURL = @".*";', f'static NSString * const kStartURL = @"{web_url}";', vc_data)
+            vc_data = re.sub(r'\[origin\.host caseInsensitiveCompare:@".*?"\]', f'[origin.host caseInsensitiveCompare:@"{domain}"]', vc_data)
+
+            # 5.0 Auto-translate Native Alerts
+            if lang == 'en':
+                vc_data = re.sub(r'actionWithTitle:@"Hủy"', 'actionWithTitle:@"Cancel"', vc_data)
+                vc_data = re.sub(r'actionWithTitle:@"(chấp nhận|Chấp Nhận)"', 'actionWithTitle:@"Accept"', vc_data)
+                vc_data = re.sub(
+                    r"<h2>Không thể tải nội dung</h2><p>Hãy kiểm tra kết nối mạng và thử lại.</p>", 
+                    "<h2>Content Unavailable</h2><p>Please check your internet connection and try again.</p>", 
+                    vc_data
+                )
+            else:
+                vc_data = re.sub(r'actionWithTitle:@"Cancel"', 'actionWithTitle:@"Hủy"', vc_data)
+                vc_data = re.sub(r'actionWithTitle:@"Accept"', 'actionWithTitle:@"Chấp Nhận"', vc_data)
+                vc_data = re.sub(r'actionWithTitle:@"chấp nhận"', 'actionWithTitle:@"Chấp Nhận"', vc_data)
+                vc_data = re.sub(
+                    r"<h2>Content Unavailable</h2><p>Please check your internet connection and try again.</p>", 
+                    "<h2>Không thể tải nội dung</h2><p>Hãy kiểm tra kết nối mạng và thử lại.</p>", 
+                    vc_data
+                )
+
+            # 5.1 Auto-remove legacy permissions code
+            vc_data = re.sub(r'\s*\[self requestMediaPermissionsIfNeeded\];', '', vc_data)
+            vc_data = re.sub(r'- \(void\)requestMediaPermissionsIfNeeded\s*\{.*?\n\}\n*(?=-|\@end)', '', vc_data, flags=re.DOTALL)
+            vc_data = re.sub(r'#pragma mark - Intercept Custom URLs \(Exit App\).*?decisionHandler\(WKNavigationActionPolicyAllow\);\s*\}\s*', '', vc_data, flags=re.DOTALL)
+
+            # 5.2 Handle Imports
+            import_block = "// --- AUTO_INJECT_IMPORTS_START ---\n" + "\n".join([f"#import {i}" for i in needed_imports]) + "\n// --- AUTO_INJECT_IMPORTS_END ---\n"
+            if "// --- AUTO_INJECT_IMPORTS_START ---" in vc_data:
+                vc_data = re.sub(r"// --- AUTO_INJECT_IMPORTS_START ---.*?// --- AUTO_INJECT_IMPORTS_END ---\n?", import_block if needed_imports else "", vc_data, flags=re.DOTALL)
+            elif needed_imports:
+                vc_data = re.sub(r'(#import "ViewController\.h"|#import <UIKit/UIKit\.h>)', r'\1\n' + import_block, vc_data, count=1)
+
+            # 5.3 Handle Interface
+            interface_content = "\n".join(needed_interfaces)
+            interface_block = f"// --- AUTO_INJECT_INTERFACE_START ---\n@interface ViewController ()\n{interface_content}\n@end\n// --- AUTO_INJECT_INTERFACE_END ---\n"
+            if "// --- AUTO_INJECT_INTERFACE_START ---" in vc_data:
+                vc_data = re.sub(r"// --- AUTO_INJECT_INTERFACE_START ---.*?// --- AUTO_INJECT_INTERFACE_END ---\n?", interface_block if needed_interfaces else "", vc_data, flags=re.DOTALL)
+            elif needed_interfaces:
+                vc_data = re.sub(r'(@implementation ViewController)', interface_block + r'\n\1', vc_data, count=1)
+
+            # 5.4 Handle Permissions Method
+            method_content = "\n    ".join(needed_codes)
+            method_block = f"// --- AUTO_INJECT_METHOD_START ---\n- (void)requestAllPermissions {{\n    {method_content}\n}}\n// --- AUTO_INJECT_METHOD_END ---\n"
+            if "// --- AUTO_INJECT_METHOD_START ---" in vc_data:
+                vc_data = re.sub(r"// --- AUTO_INJECT_METHOD_START ---.*?// --- AUTO_INJECT_METHOD_END ---\n?", method_block if needed_codes else "", vc_data, flags=re.DOTALL)
+            elif needed_codes:
+                vc_data = re.sub(r'(@implementation ViewController)', r'\1\n' + method_block, vc_data, count=1)
+
+            # 5.5 Call permissions inside viewDidLoad
+            call_stmt = "    [self requestAllPermissions]; // AUTO_INJECT_CALL"
+            if "// AUTO_INJECT_CALL" not in vc_data and needed_codes:
+                vc_data = re.sub(r'(- \(void\)viewDidLoad\s*\{)', r'\1\n' + call_stmt, vc_data, count=1)
+            elif not needed_codes and "// AUTO_INJECT_CALL" in vc_data:
+                vc_data = re.sub(r'\s*\[self requestAllPermissions\]; // AUTO_INJECT_CALL\n?', '', vc_data)
+
+            # 5.6 Handle Exit App Feature
+            exit_block = """
 // --- AUTO_INJECT_EXIT_START ---
 - (void)webView:(WKWebView *)webView decidePolicyForNavigationAction:(WKNavigationAction *)navigationAction decisionHandler:(void (^)(WKNavigationActionPolicy))decisionHandler {
     NSURL *url = navigationAction.request.URL;
@@ -346,27 +407,31 @@ def main():
 }
 // --- AUTO_INJECT_EXIT_END ---
 """
-        if "// --- AUTO_INJECT_EXIT_START ---" in vc_data:
-            vc_data = re.sub(r"\n?// --- AUTO_INJECT_EXIT_START ---.*?// --- AUTO_INJECT_EXIT_END ---\n?", exit_block if enable_exit else "\n", vc_data, flags=re.DOTALL)
-        elif enable_exit:
-            parts = vc_data.rsplit("@end", 1)
-            if len(parts) == 2:
-                vc_data = parts[0] + exit_block + "@end\n"
+            if "// --- AUTO_INJECT_EXIT_START ---" in vc_data:
+                vc_data = re.sub(r"\n?// --- AUTO_INJECT_EXIT_START ---.*?// --- AUTO_INJECT_EXIT_END ---\n?", exit_block if enable_exit else "\n", vc_data, flags=re.DOTALL)
+            elif enable_exit:
+                parts = vc_data.rsplit("@end", 1)
+                if len(parts) == 2:
+                    vc_data = parts[0] + exit_block + "@end\n"
 
-        with open("ViewController.m", "w", encoding="utf-8") as f: f.write(vc_data)
+            with open("ViewController.m", "w", encoding="utf-8") as f: f.write(vc_data)
 
-    if not os.path.exists("Makefile"):
-        print_banner(f"{RED}❌ ERROR: 'Makefile' not found!{RESET}")
-        sys.exit(1)
+        if not os.path.exists("Makefile"):
+            print_banner(f"{RED}❌ ERROR: 'Makefile' not found!{RESET}")
+            sys.exit(1)
 
-    # 6. Execute Build
-    try:
+        # 6. Execute Build
         subprocess.run(["make", "clean"], check=True)
         if build_deb: subprocess.run(["make", "package"], check=True)
         if build_ipa: subprocess.run(["make", "ipa"], check=True)
         print_banner(f"{GREEN}{t['done']}{RESET}")
+
     except subprocess.CalledProcessError:
         print_banner(f"{RED}{t['error']}{RESET}")
+        
+    finally:
+        # BƯỚC CUỐI CÙNG: KHÔI PHỤC TOÀN BỘ FILE GỐC VÀ ICON GỐC (Dù build lỗi hay thành công)
+        restore_original_files(original_backups, t['restoring'])
 
 if __name__ == "__main__":
     main()
