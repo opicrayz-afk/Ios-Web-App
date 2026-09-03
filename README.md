@@ -16,7 +16,7 @@ Tenduancuaban/
 ├── Entitlements.plist
 ├── control
 ├── Resources/index.html
-├── Resources/app_icon.png hoặc .jpg hoặc vv
+├── Resources/app_icon.png|.jpg|.webp|.bmp|.gif
 └── build.sh
 ```
 
@@ -99,7 +99,7 @@ Yourprojectname/
 ├── Entitlements.plist
 ├── control
 ├── Resources/index.html
-├── Resources/app_icon.png or .jpg or etc
+├── Resources/app_icon.png|.jpg|.webp|.bmp|.gif
 └── build.sh
 ```
 
