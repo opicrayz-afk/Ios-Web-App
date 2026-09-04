@@ -34,7 +34,7 @@ TEXTS = {
         'build_deb': "Bạn có muốn build file DEB (Dành cho máy Jailbreak) không?",
         'build_ipa': "Bạn có muốn build file IPA (Dành cho Sideload/TrollStore) không?",
         'processing': "ĐANG TIÊM MÃ NATIVE & XỬ LÝ BUILD...",
-        'restoring': "ĐANG KHÔI PHỤC MÃ NGUỒN VỀ TRẠNG THÁI GỐC...",
+        'restoring': "ĐANG KHÔI PHỤC MÃ NGUỒN VỀ TRẠNG THÁI GỐC ĐẢM BẢO 100%...",
         'done': "HOÀN TẤT! Quá trình thành công.",
         'error': "LỖI: Xảy ra sự cố trong quá trình build.",
         'err_req': "Đây là trường bắt buộc. Vui lòng nhập dữ liệu!",
@@ -60,7 +60,7 @@ TEXTS = {
         'build_deb': "Do you want to build a DEB file (For Jailbroken devices)?",
         'build_ipa': "Do you want to build an IPA file (For Sideload/TrollStore)?",
         'processing': "INJECTING NATIVE CODE & PROCESSING BUILD...",
-        'restoring': "RESTORING ORIGINAL SOURCE CODE...",
+        'restoring': "RESTORING 100% ORIGINAL SOURCE CODE...",
         'done': "DONE! Build completed successfully.",
         'error': "ERROR: An issue occurred during the build process.",
         'err_req': "This is a required field. Please enter a value!",
@@ -94,11 +94,36 @@ PERM_DATA = {
         'interface': '@property (nonatomic, strong) CLLocationManager *locManager;',
         'code': 'self.locManager = [[CLLocationManager alloc] init];\n    [self.locManager requestWhenInUseAuthorization];'
     },
-    'FaceID / TouchID': {
+    'FaceID / TouchID / Passwords': {
         'plist': ['NSFaceIDUsageDescription'],
         'frameworks': ['LocalAuthentication'],
         'imports': ['<LocalAuthentication/LocalAuthentication.h>'],
         'code': 'LAContext *context = [[LAContext alloc] init];\n    NSError *authError = nil;\n    [context canEvaluatePolicy:LAPolicyDeviceOwnerAuthenticationWithBiometrics error:&authError];'
+    },
+    'App Tracking (Theo dõi - Analytics/Ads)': {
+        'plist': ['NSUserTrackingUsageDescription'],
+        'frameworks': ['AppTrackingTransparency'],
+        'imports': ['<AppTrackingTransparency/AppTrackingTransparency.h>'],
+        'code': 'if (@available(iOS 14, *)) {\n        [ATTrackingManager requestTrackingAuthorizationWithCompletionHandler:^(ATTrackingManagerAuthorizationStatus status) {}];\n    }'
+    },
+    'Speech Recognition (Nhận diện giọng nói)': {
+        'plist': ['NSSpeechRecognitionUsageDescription'],
+        'frameworks': ['Speech'],
+        'imports': ['<Speech/Speech.h>'],
+        'code': '[SFSpeechRecognizer requestAuthorization:^(SFSpeechRecognizerAuthorizationStatus status) {}];'
+    },
+    'Motion & Fitness (Chuyển động & Thể chất)': {
+        'plist': ['NSMotionUsageDescription'],
+        'frameworks': ['CoreMotion'],
+        'imports': ['<CoreMotion/CoreMotion.h>'],
+        'interface': '@property (nonatomic, strong) CMMotionActivityManager *motionManager;',
+        'code': 'self.motionManager = [[CMMotionActivityManager alloc] init];\n    [self.motionManager queryActivityStartingFromDate:[NSDate date] toDate:[NSDate date] toQueue:[NSOperationQueue mainQueue] withHandler:^(NSArray<CMMotionActivity *> * _Nullable activities, NSError * _Nullable error) {}];'
+    },
+    'Apple Music (Thư viện nhạc)': {
+        'plist': ['NSAppleMusicUsageDescription'],
+        'frameworks': ['MediaPlayer'],
+        'imports': ['<MediaPlayer/MediaPlayer.h>'],
+        'code': '[MPMediaLibrary requestAuthorization:^(MPMediaLibraryAuthorizationStatus status) {}];'
     },
     'Bluetooth': {
         'plist': ['NSBluetoothAlwaysUsageDescription', 'NSBluetoothPeripheralUsageDescription'],
@@ -141,33 +166,36 @@ def ask_yes_no(prompt):
         elif ans in ['n', 'no']: return False
 
 def backup_original_files():
-    """Sao lưu các file gốc vào bộ nhớ (RAM) trước khi thay đổi."""
+    """Sao lưu 100% các file gốc và TOÀN BỘ thư mục Resources vào bộ nhớ (RAM)."""
     backups = {}
-    files_to_backup = ["control", "Makefile", "Info.plist", "ViewController.m", "Resources/index.html"]
+    files_to_backup = ["control", "Makefile", "Info.plist", "ViewController.m"]
     
-    # Tự động quét và đưa toàn bộ các file app_icon gốc vào danh sách backup
+    # Tự động quét và đưa TOÀN BỘ file trong Resources vào danh sách backup
     if os.path.exists("Resources"):
-        for f_name in os.listdir("Resources"):
-            if f_name.lower().startswith("app_icon") and os.path.isfile(os.path.join("Resources", f_name)):
-                files_to_backup.append(os.path.join("Resources", f_name))
+        for root, dirs, files in os.walk("Resources"):
+            for file in files:
+                files_to_backup.append(os.path.join(root, file))
                 
     for file_path in files_to_backup:
         if os.path.exists(file_path):
-            # Đọc dưới dạng Binary (rb) để không làm hỏng file ảnh
             with open(file_path, "rb") as f:
                 backups[file_path] = f.read()
     return backups
 
 def restore_original_files(backups, t_msg):
-    """Khôi phục lại toàn bộ file gốc từ bộ nhớ (RAM)."""
+    """Khôi phục lại toàn bộ file gốc từ RAM, tiêu diệt hoàn toàn file rác sinh ra trong lúc build."""
     print_banner(t_msg)
+    
+    # Xóa sạch thư mục Resources hiện tại (vì tool có thể đã tạo file rác/xóa icon của người dùng)
+    if os.path.exists("Resources"):
+        shutil.rmtree("Resources")
+        
     for file_path, content in backups.items():
         if os.path.dirname(file_path):
             os.makedirs(os.path.dirname(file_path), exist_ok=True)
-        # Ghi lại dưới dạng Binary (wb) để nguyên vẹn cả ảnh và code
         with open(file_path, "wb") as f:
             f.write(content)
-    print(f"{GREEN}✅ Đã khôi phục hoàn tất mã nguồn và Icon gốc.{RESET}")
+    print(f"{GREEN}✅ Đã khôi phục hoàn tất 100% mã nguồn gốc.{RESET}")
 
 def main():
     print(f"{BOLD}Select Language / Chọn ngôn ngữ:{RESET}\n1. Tiếng Việt\n2. English")
@@ -182,7 +210,7 @@ def main():
     os.chdir(os.path.dirname(os.path.abspath(__file__)))
     print_banner(t['header'])
 
-    # --- BƯỚC QUAN TRỌNG: BACKUP FILE GỐC TRƯỚC KHI HỎI BẤT KỲ THỨ GÌ ---
+    # --- BƯỚC QUAN TRỌNG: BACKUP TỔNG THỂ TRƯỚC KHI HỎI BẤT KỲ THỨ GÌ ---
     original_backups = backup_original_files()
 
     app_name = ask_input(t['ask_app_name'], t['err_req'])
@@ -324,7 +352,7 @@ def main():
             p_dict["CFBundleVersion"] = version
             p_dict["MinimumOSVersion"] = min_os
             p_dict["WKAppBoundDomains"] = [domain]
-            p_dict["CFBundleIconFiles"] = [final_icon_name] # Tự động nhét đúng tên icon vừa lấy được
+            p_dict["CFBundleIconFiles"] = [final_icon_name] 
 
             for perm_list in PERM_DATA.values():
                 for k in perm_list['plist']: p_dict.pop(k, None)
@@ -430,7 +458,7 @@ def main():
         print_banner(f"{RED}{t['error']}{RESET}")
         
     finally:
-        # BƯỚC CUỐI CÙNG: KHÔI PHỤC TOÀN BỘ FILE GỐC VÀ ICON GỐC (Dù build lỗi hay thành công)
+        # BƯỚC CUỐI CÙNG: KHÔI PHỤC TOÀN BỘ FILE GỐC VÀ ICON GỐC
         restore_original_files(original_backups, t['restoring'])
 
 if __name__ == "__main__":
