@@ -113,7 +113,7 @@ PERM_DATA = {
         'code': 'if (@available(iOS 14, *)) {\n        [ATTrackingManager requestTrackingAuthorizationWithCompletionHandler:^(ATTrackingManagerAuthorizationStatus status) {}];\n    }'
     },
     'Notifications (Thông báo Push/Local)': {
-        'plist': [], 
+        'plist': [], # Apple không dùng Info.plist cho quyền này
         'frameworks': ['UserNotifications'],
         'imports': ['<UserNotifications/UserNotifications.h>'],
         'code': '[[UNUserNotificationCenter currentNotificationCenter] requestAuthorizationWithOptions:(UNAuthorizationOptionAlert | UNAuthorizationOptionSound | UNAuthorizationOptionBadge) completionHandler:^(BOOL granted, NSError * _Nullable error) {}];'
@@ -125,7 +125,7 @@ PERM_DATA = {
         'code': 'EKEventStore *reminderStore = [[EKEventStore alloc] init];\n    [reminderStore requestAccessToEntityType:EKEntityTypeReminder completion:^(BOOL granted, NSError * _Nullable error) {}];'
     },
     'Local Network (Mạng nội bộ)': {
-        'plist': ['NSLocalNetworkUsageDescription'],
+        'plist': ['NSLocalNetworkUsageDescription'], # Bổ sung quyền Local Network theo đúng chuẩn Apple
         'frameworks': [],
         'imports': [],
         'code': ''
@@ -193,14 +193,14 @@ PERM_DATA = {
         'code': '[INPreferences requestSiriAuthorization:^(INSiriAuthorizationStatus status) {}];'
     },
     'Apple Pay (Thanh toán gốc)': {
-        'plist': [],
+        'plist': [], # Apple không dùng Info.plist cho quyền này
         'frameworks': ['PassKit'],
         'imports': ['<PassKit/PassKit.h>'],
         'restricted': True,
         'code': ''
     },
     'VPN & Network Extension': {
-        'plist': [],
+        'plist': [], # Apple không dùng Info.plist cho quyền này
         'frameworks': ['NetworkExtension'],
         'imports': ['<NetworkExtension/NetworkExtension.h>'],
         'restricted': True,
@@ -318,7 +318,7 @@ def main():
             if data.get('restricted'):
                 print(f"\n{RED}{BOLD}{t['restricted_warn']}{RESET}")
                 if not ask_yes_no(t['ask_proceed']):
-                    continue # Bỏ qua quyền này nếu người dùng chọn 'No'
+                    continue 
             
             # Nếu có yêu cầu description plist
             if data.get('plist'):
@@ -402,9 +402,8 @@ def main():
         final_icon_name = "app_icon.png"
         if found_icons:
             found_icons.sort(key=lambda x: ICON_EXT_PRIORITY.index(os.path.splitext(x.lower())[1]))
-            final_icon_name = found_icons[0] # Lấy file có độ ưu tiên cao nhất
+            final_icon_name = found_icons[0]
             
-            # Xóa sạch các icon có độ ưu tiên thấp hơn (tránh nặng app)
             for duplicate_icon in found_icons[1:]:
                 os.remove(os.path.join("Resources", duplicate_icon))
                 print(f"{YELLOW}⚠️  Removed lower priority icon: {duplicate_icon}{RESET}")
