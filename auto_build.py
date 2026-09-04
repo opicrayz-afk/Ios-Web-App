@@ -15,7 +15,7 @@ RESET = "\033[0m"
 
 TEXTS = {
     'vi': {
-        'header': "CÔNG CỤ TỰ ĐỘNG BUILD IOS WEB APP NÂNG CAO",
+        'header': "CÔNG CỤ TỰ ĐỘNG BUILD IOS WEB APP NÂNG CAO (ULTIMATE)",
         'ask_app_name': "Nhập tên App (Bắt buộc): ",
         'ask_bundle_id': "Nhập Bundle ID (VD: com.myname.myapp) (Bắt buộc): ",
         'ask_url': "Nhập Link Website (VD: https://web.com) (Bắt buộc): ",
@@ -31,6 +31,8 @@ TEXTS = {
         'perm_header': "CẤU HÌNH QUYỀN TRUY CẬP (APPLE PERMISSIONS)",
         'ask_perm': "Bạn có muốn yêu cầu quyền truy cập {0} không?",
         'ask_reason': "  -> Nhập lý do (Sẽ hiển thị cho người dùng khi xin quyền): ",
+        'restricted_warn': "⚠️ CẢNH BÁO: Quyền này BẮT BUỘC phải có tệp chứng chỉ '.entitlements' và tài khoản Apple Developer trả phí (99$/năm). Nếu cố tình build vào thiết bị thường hoặc không có chứng chỉ, App sẽ bị Crash ngay khi mở!",
+        'ask_proceed': "  -> Bạn vẫn muốn tiếp tục thêm quyền này chứ?",
         'build_deb': "Bạn có muốn build file DEB (Dành cho máy Jailbreak) không?",
         'build_ipa': "Bạn có muốn build file IPA (Dành cho Sideload/TrollStore) không?",
         'processing': "ĐANG TIÊM MÃ NATIVE & XỬ LÝ BUILD...",
@@ -41,7 +43,7 @@ TEXTS = {
         'err_theos': "❌ LỖI: Chưa thiết lập biến môi trường THEOS!\nVui lòng chạy lệnh: export THEOS=\"$HOME/theos\""
     },
     'en': {
-        'header': "ADVANCED IOS WEB APP AUTOMATION BUILD TOOL",
+        'header': "ADVANCED IOS WEB APP AUTOMATION BUILD TOOL (ULTIMATE)",
         'ask_app_name': "Enter App Name (Required): ",
         'ask_bundle_id': "Enter Bundle ID (e.g., com.myname.myapp) (Required): ",
         'ask_url': "Enter Web URL (e.g., https://web.com) (Required): ",
@@ -57,6 +59,8 @@ TEXTS = {
         'perm_header': "APPLE PERMISSIONS CONFIGURATION",
         'ask_perm': "Do you want to request {0} permission?",
         'ask_reason': "  -> Enter usage description (Shown to user): ",
+        'restricted_warn': "⚠️ WARNING: This permission REQUIRES an '.entitlements' file and a paid Apple Developer account ($99/year). Building this without entitlements will result in an immediate App Crash!",
+        'ask_proceed': "  -> Do you still want to proceed and inject this permission?",
         'build_deb': "Do you want to build a DEB file (For Jailbroken devices)?",
         'build_ipa': "Do you want to build an IPA file (For Sideload/TrollStore)?",
         'processing': "INJECTING NATIVE CODE & PROCESSING BUILD...",
@@ -68,7 +72,9 @@ TEXTS = {
     }
 }
 
+# TỪ ĐIỂN QUYỀN HẠN ĐẦY ĐỦ CỦA APPLE
 PERM_DATA = {
+    # === NHÓM QUYỀN CƠ BẢN VÀ THÔNG DỤNG ===
     'Camera': {
         'plist': ['NSCameraUsageDescription'],
         'frameworks': ['AVFoundation'],
@@ -105,6 +111,24 @@ PERM_DATA = {
         'frameworks': ['AppTrackingTransparency'],
         'imports': ['<AppTrackingTransparency/AppTrackingTransparency.h>'],
         'code': 'if (@available(iOS 14, *)) {\n        [ATTrackingManager requestTrackingAuthorizationWithCompletionHandler:^(ATTrackingManagerAuthorizationStatus status) {}];\n    }'
+    },
+    'Notifications (Thông báo Push/Local)': {
+        'plist': [], 
+        'frameworks': ['UserNotifications'],
+        'imports': ['<UserNotifications/UserNotifications.h>'],
+        'code': '[[UNUserNotificationCenter currentNotificationCenter] requestAuthorizationWithOptions:(UNAuthorizationOptionAlert | UNAuthorizationOptionSound | UNAuthorizationOptionBadge) completionHandler:^(BOOL granted, NSError * _Nullable error) {}];'
+    },
+    'Reminders (Lời nhắc)': {
+        'plist': ['NSRemindersUsageDescription'],
+        'frameworks': ['EventKit'],
+        'imports': ['<EventKit/EventKit.h>'],
+        'code': 'EKEventStore *reminderStore = [[EKEventStore alloc] init];\n    [reminderStore requestAccessToEntityType:EKEntityTypeReminder completion:^(BOOL granted, NSError * _Nullable error) {}];'
+    },
+    'Local Network (Mạng nội bộ)': {
+        'plist': ['NSLocalNetworkUsageDescription'],
+        'frameworks': [],
+        'imports': [],
+        'code': ''
     },
     'Speech Recognition (Nhận diện giọng nói)': {
         'plist': ['NSSpeechRecognitionUsageDescription'],
@@ -143,6 +167,44 @@ PERM_DATA = {
         'frameworks': ['EventKit'],
         'imports': ['<EventKit/EventKit.h>'],
         'code': 'EKEventStore *eventStore = [[EKEventStore alloc] init];\n    [eventStore requestAccessToEntityType:EKEntityTypeEvent completion:^(BOOL granted, NSError * _Nullable error) {}];'
+    },
+
+    # === NHÓM QUYỀN ĐẶC QUYỀN (RESTRICTED) ===
+    'HealthKit (Dữ liệu Sức khỏe)': {
+        'plist': ['NSHealthShareUsageDescription', 'NSHealthUpdateUsageDescription'],
+        'frameworks': ['HealthKit'],
+        'imports': ['<HealthKit/HealthKit.h>'],
+        'restricted': True,
+        'code': 'if ([HKHealthStore isHealthDataAvailable]) {\n        HKHealthStore *healthStore = [[HKHealthStore alloc] init];\n    }'
+    },
+    'HomeKit (Nhà thông minh)': {
+        'plist': ['NSHomeKitUsageDescription'],
+        'frameworks': ['HomeKit'],
+        'imports': ['<HomeKit/HomeKit.h>'],
+        'restricted': True,
+        'interface': '@property (nonatomic, strong) HMHomeManager *homeManager;',
+        'code': 'self.homeManager = [[HMHomeManager alloc] init];'
+    },
+    'Siri (Trợ lý ảo)': {
+        'plist': ['NSSiriUsageDescription'],
+        'frameworks': ['Intents'],
+        'imports': ['<Intents/Intents.h>'],
+        'restricted': True,
+        'code': '[INPreferences requestSiriAuthorization:^(INSiriAuthorizationStatus status) {}];'
+    },
+    'Apple Pay (Thanh toán gốc)': {
+        'plist': [],
+        'frameworks': ['PassKit'],
+        'imports': ['<PassKit/PassKit.h>'],
+        'restricted': True,
+        'code': ''
+    },
+    'VPN & Network Extension': {
+        'plist': [],
+        'frameworks': ['NetworkExtension'],
+        'imports': ['<NetworkExtension/NetworkExtension.h>'],
+        'restricted': True,
+        'code': ''
     }
 }
 
@@ -170,7 +232,6 @@ def backup_original_files():
     backups = {}
     files_to_backup = ["control", "Makefile", "Info.plist", "ViewController.m"]
     
-    # Tự động quét và đưa TOÀN BỘ file trong Resources vào danh sách backup
     if os.path.exists("Resources"):
         for root, dirs, files in os.walk("Resources"):
             for file in files:
@@ -186,7 +247,6 @@ def restore_original_files(backups, t_msg):
     """Khôi phục lại toàn bộ file gốc từ RAM, tiêu diệt hoàn toàn file rác sinh ra trong lúc build."""
     print_banner(t_msg)
     
-    # Xóa sạch thư mục Resources hiện tại (vì tool có thể đã tạo file rác/xóa icon của người dùng)
     if os.path.exists("Resources"):
         shutil.rmtree("Resources")
         
@@ -254,12 +314,21 @@ def main():
 
     for perm_name, data in PERM_DATA.items():
         if ask_yes_no(t['ask_perm'].format(perm_name)):
-            reason = ask_input(t['ask_reason'], t['err_req'])
-            for key in data['plist']: granted_perms[key] = reason
-            needed_frameworks.update(data['frameworks'])
-            needed_imports.update(data['imports'])
+            # Cảnh báo thông minh nếu là quyền Restricted
+            if data.get('restricted'):
+                print(f"\n{RED}{BOLD}{t['restricted_warn']}{RESET}")
+                if not ask_yes_no(t['ask_proceed']):
+                    continue # Bỏ qua quyền này nếu người dùng chọn 'No'
+            
+            # Nếu có yêu cầu description plist
+            if data.get('plist'):
+                reason = ask_input(t['ask_reason'], t['err_req'])
+                for key in data['plist']: granted_perms[key] = reason
+                
+            needed_frameworks.update(data.get('frameworks', []))
+            needed_imports.update(data.get('imports', []))
             if 'interface' in data: needed_interfaces.add(data['interface'])
-            needed_codes.append(data['code'])
+            if data.get('code'): needed_codes.append(data['code'])
 
     print_banner("BUILD OPTIONS")
     build_deb = ask_yes_no(t['build_deb'])
@@ -355,12 +424,13 @@ def main():
             p_dict["CFBundleIconFiles"] = [final_icon_name] 
 
             for perm_list in PERM_DATA.values():
-                for k in perm_list['plist']: p_dict.pop(k, None)
+                if perm_list.get('plist'):
+                    for k in perm_list['plist']: p_dict.pop(k, None)
             for k, v in granted_perms.items(): p_dict[k] = v
 
             with open("Info.plist", "wb") as f: plistlib.dump(p_dict, f)
 
-        # 5. Inject Objective-C Code
+        # 5. Inject Objective-C Code (KHÔNG SỬA UI)
         if os.path.exists("ViewController.m"):
             with open("ViewController.m", "r", encoding="utf-8") as f: vc_data = f.read()
                 
