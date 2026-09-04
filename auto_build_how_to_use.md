@@ -46,7 +46,7 @@ Nhóm Quyền Thông Dụng: (Camera, Mic, Ảnh, Vị trí, FaceID, App Trackin
 Nếu web của bạn có dùng tính năng đó, gõ y (Yes). Sau đó tool sẽ yêu cầu bạn nhập Lý do ngắn gọn (VD: "Ứng dụng cần dùng camera để quét mã QR").
 
 Nhóm Quyền Đặc Biệt (Restricted): (HealthKit, HomeKit, Siri, Apple Pay, VPN).
-⚠️ LƯU Ý QUAN TRỌNG: Khi bạn chọn các quyền này, tool sẽ hiện cảnh báo đỏ. Đây là các quyền can thiệp sâu, BẮT BUỘC phải có tệp chứng chỉ .entitlements và tài khoản Apple Developer 99$/năm. Nếu bạn không có chứng chỉ mà vẫn ấn y để cố tình build, app sẽ bị văng (Crash) ngay khi mở! Hãy chọn n nếu bạn dùng chứng chỉ miễn phí (Sideloadly/TrollStore).
+⚠️ LƯU Ý QUAN TRỌNG: Khi bạn chọn các quyền này, tool sẽ hiện cảnh báo đỏ. Đây là các quyền can thiệp sâu, BẮT BUỘC phải có tệp chứng chỉ .entitlements và tài khoản Apple Developer 99$/năm. Nếu bạn không có chứng chỉ mà vẫn ấn y để cố tình build, app sẽ bị văng (Crash) ngay khi mở! Hãy chọn n nếu bạn dùng chứng chỉ miễn phí (Sideloadly/TrollStore) hoặc chứng chỉ mua.
 
 6. Tùy chọn Build:
 Build DEB: Chọn y nếu bạn muốn tạo file cho máy đã Jailbreak.
@@ -107,7 +107,7 @@ Common Permissions: (Camera, Mic, Photos, Location, FaceID, App Tracking, Notifi
 If your website uses a feature, type y (Yes). The tool will then ask for a short Reason (e.g., "The app needs to use the camera to scan QR codes").
 
 Restricted Permissions: (HealthKit, HomeKit, Siri, Apple Pay, VPN).
-⚠️ CRITICAL NOTE: When you select these, the tool will display a red warning. These are deep-level permissions that REQUIRE an .entitlements file and a $99/year Apple Developer account. If you force an injection by pressing y without entitlements, the app will Crash immediately upon opening! Choose n if you use free certificates (Sideloadly/TrollStore).
+⚠️ CRITICAL NOTE: When you select these, the tool will display a red warning. These are deep-level permissions that REQUIRE an .entitlements file and a $99/year Apple Developer account. If you force an injection by pressing y without entitlements, the app will Crash immediately upon opening! Choose n if you use free certificates (Sideloadly/TrollStore) or bought cert.
 
 6. Build Options:
 Build DEB: Choose y if you want to create a file for Jailbroken devices.
