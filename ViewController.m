@@ -17,6 +17,7 @@ static NSString * const kStartURL = @"https://your website link";
     [super viewDidLoad];
     self.view.backgroundColor = UIColor.blackColor;
 
+    // 1. Cấu hình WebView chuẩn xác để cho phép phát Video Inline (Không tự động Fullscreen)
     WKWebViewConfiguration *configuration = [[WKWebViewConfiguration alloc] init];
     configuration.allowsInlineMediaPlayback = YES;
     configuration.mediaTypesRequiringUserActionForPlayback = WKAudiovisualMediaTypeNone;
@@ -24,8 +25,8 @@ static NSString * const kStartURL = @"https://your website link";
     configuration.preferences.javaScriptEnabled = YES;
     configuration.preferences.javaScriptCanOpenWindowsAutomatically = YES;
 
-    WKWebViewConfiguration *config = [[WKWebViewConfiguration alloc] init];
-    self.webView = [[WKWebView alloc] initWithFrame:self.view.bounds configuration:config];
+    // 2. TRUYỀN ĐÚNG BIẾN configuration ĐÃ CÀI ĐẶT VÀO WEBVIEW
+    self.webView = [[WKWebView alloc] initWithFrame:self.view.bounds configuration:configuration];
     self.webView.navigationDelegate = self;
     self.webView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
     self.webView.frame = self.view.bounds;
@@ -36,11 +37,13 @@ static NSString * const kStartURL = @"https://your website link";
     [self.view addSubview:self.webView];
     
     [NSLayoutConstraint activateConstraints:@[
-        
+        // Né Tai thỏ / Dynamic Island ở cạnh trên
         [self.webView.topAnchor constraintEqualToAnchor:self.view.safeAreaLayoutGuide.topAnchor],
          
+        // Tràn full xuống đáy màn hình (Xuyên qua Home Indicator)
         [self.webView.bottomAnchor constraintEqualToAnchor:self.view.bottomAnchor],
         
+        // Căn khít mép trái/phải
         [self.webView.leadingAnchor constraintEqualToAnchor:self.view.safeAreaLayoutGuide.leadingAnchor],
         [self.webView.trailingAnchor constraintEqualToAnchor:self.view.safeAreaLayoutGuide.trailingAnchor]
     ]];
@@ -89,6 +92,7 @@ static NSString * const kStartURL = @"https://your website link";
         [PHPhotoLibrary requestAuthorization:^(__unused PHAuthorizationStatus status) {}];
     }
 }
+
 #pragma mark - WKNavigationDelegate
 
 - (void)webView:(WKWebView *)webView decidePolicyForNavigationAction:(WKNavigationAction *)navigationAction decisionHandler:(void (^)(WKNavigationActionPolicy))decisionHandler {
@@ -96,14 +100,12 @@ static NSString * const kStartURL = @"https://your website link";
     
     if ([url.scheme isEqualToString:@"app"] && [url.host isEqualToString:@"exit"]) {
         decisionHandler(WKNavigationActionPolicyCancel);
-        
         exit(0); 
         return;
     }
     
     decisionHandler(WKNavigationActionPolicyAllow);
 }
-
 
 - (void)webView:(WKWebView *)webView didFailProvisionalNavigation:(WKNavigation *)navigation withError:(NSError *)error {
     if (error.code != NSURLErrorCancelled) [self loadOfflinePage];
