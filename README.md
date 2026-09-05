@@ -1,11 +1,39 @@
-# Ios Web App — Theos application
+# iOS Web App — Theos Application (Ultimate Multi-Tab)
 
-Ứng dụng iOS 13+ dùng `WKWebView`. Khi có mạng, nó mở `https://linkwebsitecuaban`; nếu tải trang thất bại, nó dùng `Resources/index.html` trong bundle.
+Ứng dụng iOS 14+ dùng WKWebView mạnh mẽ, được thiết kế để tự động hóa 100% cấu hình thông qua Python (auto_build.py). Khi có mạng, ứng dụng mở trang web của bạn; nếu tải trang thất bại, nó dùng giao diện báo lỗi ngoại tuyến an toàn.
 
-Project chỉ build slice `arm64`. Đây là lựa chọn cố ý: nó chạy được cả máy arm64 và arm64e, đồng thời tránh ABI arm64e không tương thích khi deployment target là iOS 13.
+Dự án này là một bước đột phá trong việc chuyển đổi Web thành App Native, hỗ trợ kiến trúc linh hoạt, tự động chuyển đổi dựa trên số lượng trang web bạn khai báo:
 
-## Cấu trúc
+Chế độ 1 Tab: Giao diện web tràn viền (tràn qua Home Indicator), vuốt mượt mà, tích hợp nút "Settings" nổi với hiệu ứng kính mờ (Frosted glass).
 
+Chế độ Đa Tab (Multi-Tab): Thanh điều hướng dưới cùng (Liquid Glass Tab Bar) chuẩn Apple, tích hợp hệ thống lưu trạng thái độc lập cho từng tab.
+
+Dự án chỉ build slice arm64 (Makefile) để tương thích hoàn hảo với các thiết bị iOS hiện đại và tránh lỗi ABI arm64e.
+
+🌟 Tính Năng Độc Quyền (Ultimate Features)
+
+Auto-Build 100% bằng Python (auto_build.py):
+Chỉ cần trả lời các câu hỏi trên Terminal trong 1 phút, Python sẽ tự động cấu hình Tên App, Bundle ID, UI/UX, Version và kích hoạt lệnh build của Theos. Đặc biệt, mã nguồn luôn được Backup và Khôi phục 100% sau mỗi lần build.
+
+Kiến trúc Liquid Glass UI (ViewController.m):
+Thanh Tab Bar áp dụng hiệu ứng kính mờ chuẩn hệ thống Apple. Khi người dùng vuốt đọc báo hoặc xem phim, Tab Bar tự động mờ dần và biến mất (Auto-hide) để giải phóng 100% diện tích màn hình. Khi vuốt ngược lên, Tab Bar sẽ hiện lại. Tối ưu vùng Safe Area để né Tai thỏ/Dynamic Island.
+
+In-App Settings (Cài đặt nội bộ):
+App tích hợp sẵn một Tab Settings (Bánh răng) cho phép bạn quản lý app trực tiếp trên điện thoại:
+
+Thay đổi App Icon trực tiếp mà không cần build lại (Khai báo tự động qua CFBundleAlternateIcons trong Info.plist).
+
+Thêm, Sửa (Tên & URL), Xóa các Web Tabs dễ dàng. Dữ liệu được lưu vĩnh viễn vào NSUserDefaults.
+
+Xem thông tin thiết bị (Mã máy, Phiên bản iOS, Bundle ID).
+
+Userscript / Tampermonkey Injector:
+Trong phần Settings, mỗi Tab web có một trình soạn thảo JavaScript riêng biệt. Bạn có thể chèn mã chặn quảng cáo, thay đổi giao diện web... và bật/tắt độc lập cho từng tab.
+
+Hệ sinh thái Quyền (Apple Permissions):
+Hỗ trợ xin cấp quyền tự động cho: Camera, Mic, Ảnh, FaceID, Vị trí, Thông báo (Push/Local), Lời nhắc, App Tracking... Tích hợp cảnh báo thông minh chống Crash khi xin các quyền đặc biệt (như Apple Pay, VPN) mà thiếu chứng chỉ.
+
+📂 Cấu Trúc Dự Án
 ```text
 Tenduancuaban/
 ├── Makefile
@@ -13,82 +41,110 @@ Tenduancuaban/
 ├── AppDelegate.h/.m
 ├── ViewController.h/.m
 ├── Info.plist
-├── Entitlements.plist
 ├── control
-├── Resources/index.html
-├── Resources/app_icon.png|.jpg|.webp|.bmp|.gif
-└── build.sh
+├── auto_build.py
+└── Resources/
+    ├── index.html
+    └── app_icon.png|.jpg|.webp|.bmp|.gif
 ```
 
-`ViewController` bật JavaScript, DOM storage mặc định của WebKit, media inline/PiP và autoplay; xử lý `input[type=file]` bằng trình chọn tài liệu cho ảnh, âm thanh và video. Camera/micro/photo library được iOS hỏi quyền khi ứng dụng mở; trên iOS 15+, trang `linkwebsitecuaban` cũng nhận cấp phép WebKit cho `getUserMedia`. Tệp được chọn từng tệp một để tương thích tuyệt đối với bộ SDK Theos iOS 13–16. `Info.plist` được khai báo như bundle resource để Theos đặt nó ở đúng gốc của `.app`—điều kiện bắt buộc để IPA cài và mở được.
+(Lưu ý: Chỉ cần thả ảnh Icon bất kỳ định dạng nào vào thư mục Resources, Python sẽ tự động lọc định dạng tốt nhất, ghi vào Info.plist và dọn dẹp sạch sẽ các file rác của hệ điều hành).
 
-## Chuẩn bị trên macOS
+🛠 Chuẩn bị Môi trường Build
 
-1. Cài Xcode đầy đủ, mở Xcode một lần, sau đó chạy `xcode-select --install` nếu máy yêu cầu Command Line Tools.
-2. Cài Theos theo tài liệu chính thức và đặt biến môi trường, ví dụ `export THEOS="$HOME/theos"`.
-3. Đảm bảo SDK iPhoneOS trong `$THEOS/sdks` hoặc dùng SDK của Xcode theo cấu hình Theos của bạn.
-4. Trong thư mục project, chạy `chmod +x build.sh` rồi `./build.sh`.
+1. Trên macOS
 
-## Chuẩn bị trên WSL
+Cài đặt Xcode đầy đủ, mở Xcode ít nhất một lần để nhận giấy phép. Chạy xcode-select --install để cài đặt Command Line Tools.
 
-Theos có thể biên dịch chéo trên Linux/WSL khi đã cài toolchain và iOS SDK tương thích. WSL không có Apple code-signing identity, vì vậy chỉ tạo IPA **chưa ký**. Hãy chuyển IPA sang macOS để ký, hoặc ký qua dịch vụ/CI macOS mà bạn kiểm soát.
+Cài đặt Theos và cấu hình biến môi trường: export THEOS="$HOME/theos".
+
+Đảm bảo bạn có SDK iOS (khuyên dùng iOS 14.x trở lên) nằm trong thư mục $THEOS/sdks.
+
+2. Trên Windows (WSL) / Linux
+
+Theos hỗ trợ biên dịch chéo rất tốt trên Linux/WSL. Tuy nhiên, WSL không thể ký số (Code-Signing) của Apple, nên app xuất ra sẽ là IPA chưa ký (Unsigned). Bạn có thể dùng TrollStore, Sideloadly hoặc AltStore để cài đặt.
+Cấu hình biến môi trường tương tự: export THEOS="$HOME/theos".
+
+🚀 Hướng dẫn Sử dụng (Build App)
+
+Mở Terminal, truy cập vào thư mục mã nguồn và khởi chạy công cụ Python:
 
 ```bash
-export THEOS="$HOME/theos"
-chmod +x build.sh
-./build.sh
+python3 auto_build.py
 ```
 
-## Kết quả build
+Công cụ sẽ hướng dẫn bạn qua các bước:
+
+Ngôn ngữ: Chọn Tiếng Việt hoặc English.
+
+Thông tin: Nhập Tên App, Bundle ID, số lượng Tab và khai báo URL cho từng Tab.
+
+Quyền: Chọn y/n cho từng quyền bạn muốn App yêu cầu. Chú ý các cảnh báo màu đỏ.
+
+Đóng gói: Chọn Build DEB hoặc IPA.
+
+📦 Xuất bản và Cài đặt
+
+Kết quả build sẽ nằm trong thư mục packages/:
+
+make package -> Tạo file .deb (Dành cho máy Jailbreak).
+
+make ipa -> Tạo file .ipa (Dành cho Sideload/TrollStore/Ký số).
+
+Cài đặt lên máy chưa Jailbreak:
+Bạn cần ký số file IPA bằng chứng chỉ Apple Developer:
 
 ```bash
-make package  # packages/bundleidcuaban_1.0.0_iphoneos-arm.deb
-make ipa      # packages/tenappcuaban.ipa (chưa ký nếu không truyền biến)
-make verify-ipa # kiểm tra IPA có Info.plist, executable và index.html
+make ipa SIGN_IDENTITY="Apple Development: Tên Bạn (TEAMID)" PROVISIONING_PROFILE="$HOME/Profiles/tenapp.mobileprovision"
 ```
 
-`make package` dành cho jailbreak rootful. Với jailbreak rootless, chạy `make package THEOS_PACKAGE_SCHEME=rootless` và thay `Architecture` trong `control` thành `iphoneos-arm64` trước khi phát hành gói rootless.
+Hoặc đơn giản hơn: Kéo file .ipa vào các công cụ miễn phí như Sideloadly, AltStore, hoặc TrollStore.
 
-## IPA cho máy không jailbreak
-
-IPA phải được ký bằng certificate/provisioning profile khớp với bundle identifier `bundleidcuaban`. Dùng lệnh sau trên macOS (thay đúng tên certificate/profile của bạn):
+Cài đặt lên máy đã Jailbreak:
 
 ```bash
-make ipa \
-  SIGN_IDENTITY="Apple Development: Your Name (TEAMID)" \
-  PROVISIONING_PROFILE="$HOME/Profiles/tenappcuaban.mobileprovision"
-```
-Lệnh đưa profile vào `embedded.mobileprovision`, ký `.app`, rồi đóng `Payload/tenappcuaban.app` thành IPA. Sau đó cài bằng Xcode Devices and Simulators, Apple Configurator, hoặc quy trình MDM/Ad Hoc/TestFlight phù hợp với profile. Không thể cài hợp lệ lên máy không jailbreak nếu không có ký số Apple hợp lệ.
-
-## Cài DEB trên máy jailbreak
-
-Chép file trong `packages/` sang máy, rồi dùng trình quản lý gói như Sileo/Zebra hoặc cài qua SSH:
-
-```bash
-scp packages/bundleidcuaban_1.0.0_iphoneos-arm.deb root@DEVICE_IP:/var/mobile/
-ssh root@DEVICE_IP 'dpkg -i /var/mobile/bundleidcuaban_1.0.0_iphoneos-arm.deb'
-```
-
-Trên jailbreak rootless, dùng file DEB đã build với scheme `rootless`, không dùng package rootful.
-
-## Thay HTML offline
-
-`Resources/index.html` đã là bản sao của file HTML được cung cấp. Muốn thay mới rồi build:
-
-```bash
-./build.sh /duong-dan/index.html
+scp packages/tenapp_1.0.0_iphoneos-arm.deb root@IP_CỦA_IPHONE:/var/mobile/
+ssh root@IP_CỦA_IPHONE 'dpkg -i /var/mobile/tenapp_1.0.0_iphoneos-arm.deb'
 ```
 
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-# Ios Web App — Theos application
+# iOS Web App — Theos Application (Ultimate Multi-Tab)
 
-An iOS 13+ application using `WKWebView`. When online, it loads `https://yourwebsitelink`; if the page fails to load, it falls back to `Resources/index.html` within the bundle.
+An iOS 14+ application using a powerful WKWebView, 100% automated via a Python script (auto_build.py). When online, it loads your websites; if the page fails to load, it falls back to a custom offline UI.
 
-The project only builds the `arm64` slice. This is an intentional choice: it runs on both arm64 and arm64e devices, while avoiding arm64e ABI incompatibilities when the deployment target is set to iOS 13.
+This project is a breakthrough in Web-to-Native transformation, supporting a dynamic architecture that automatically switches based on the number of websites:
 
-## Structure
+Single-Tab Mode: Fullscreen web view (spanning across the Home Indicator), smooth scrolling, with a frosted glass floating "Settings" button.
 
+Multi-Tab Mode: A Liquid Glass Tab Bar at the bottom, integrating an independent state preservation system for each tab.
+
+The project intentionally builds only the arm64 slice (Makefile) to ensure perfect compatibility with modern iOS devices and avoid arm64e ABI issues.
+
+🌟 Ultimate Features
+
+100% Python Auto-Build (auto_build.py):
+Answer simple Terminal prompts in 1 minute, and Python configures the App Name, Bundle ID, UI/UX, Version, and triggers the Theos build. Your original source code is 100% Backed Up and Restored automatically after every build.
+
+Liquid Glass UI Architecture (ViewController.m):
+The Tab Bar uses Apple's native frosted glass effect. When users scroll down to read or watch videos, the Tab Bar fades out (Auto-hide) to free up 100% of the screen. Scrolling up brings it back. Safe areas are optimized for the Notch/Dynamic Island.
+
+In-App Settings:
+A built-in Settings Tab (Gear icon) lets you manage the app directly on the device:
+
+Change the App Icon instantly without rebuilding (Configured via CFBundleAlternateIcons in Info.plist).
+
+Add, Edit (Name & URL), or Delete Web Tabs dynamically. Data is permanently saved to NSUserDefaults.
+
+View device info (Device Model, iOS Version, Bundle ID).
+
+Userscript / Tampermonkey Injector:
+Inside Settings, each Web Tab has its own JavaScript editor. You can inject ad-blockers or custom UI scripts and toggle them independently.
+
+Apple Permissions Ecosystem:
+Auto-request permissions for Camera, Mic, Photos, FaceID, Location, Push Notifications, Reminders, App Tracking, etc. Built-in smart warnings prevent App Crashes when requesting restricted permissions (like Apple Pay, VPN) without proper entitlements.
+
+📂 Project Structure
 ```text
 Yourprojectname/
 ├── Makefile
@@ -96,72 +152,34 @@ Yourprojectname/
 ├── AppDelegate.h/.m
 ├── ViewController.h/.m
 ├── Info.plist
-├── Entitlements.plist
 ├── control
-├── Resources/index.html
-├── Resources/app_icon.png|.jpg|.webp|.bmp|.gif
-└── build.sh
+├── auto_build.py
+└── Resources/
+    ├── index.html
+    └── app_icon.png|.jpg|.webp|.bmp|.gif
 ```
 
-`ViewController` enables JavaScript, default WebKit DOM storage, inline/PiP media, and autoplay; it handles `input[type=file]` using the document picker for images, audio, and video. iOS requests Camera/Microphone/Photo Library permissions when the app opens; on iOS 15+, the `yourwebsitelink` page also receives WebKit authorization for `getUserMedia`. Files are selected one by one for absolute compatibility with the iOS 13–16 Theos SDK. `Info.plist` is declared as a bundle resource so Theos places it at the exact root of the `.app`—a mandatory requirement for the IPA to be installed and opened.
+(Note: Just drop an Icon image of any format into Resources. Python will pick the best format, inject it into Info.plist, and clean up OS junk files automatically).
 
-## Prerequisites on macOS
+🚀 How to Build
 
-1. Install the full version of Xcode, open it once, and then run `xcode-select --install` if your machine requests Command Line Tools.
-2. Install Theos according to the official documentation and set the environment variable, e.g., `export THEOS="$HOME/theos"`.
-3. Ensure the iPhoneOS SDK is present in `$THEOS/sdks` or use Xcode's SDK based on your Theos configuration.
-4. In the project directory, run `chmod +x build.sh` followed by `./build.sh`.
-
-## Prerequisites on WSL
-
-Theos can cross-compile on Linux/WSL once a compatible toolchain and iOS SDK are installed. WSL does not have an Apple code-signing identity, so it will only generate an **unsigned** IPA. Transfer the IPA to macOS for signing, or sign it via a macOS CI/service that you control.
+Open Terminal, navigate to the source folder, and run:
 
 ```bash
-export THEOS="$HOME/theos"
-chmod +x build.sh
-./build.sh
+python3 auto_build.py
 ```
 
-## Build Results
+The tool will guide you:
 
-```bash
-make package  # packages/yourbundleid_1.0.0_iphoneos-arm.deb
-make ipa      # packages/yourappname.ipa (unsigned if no variables are passed)
-make verify-ipa # verify IPA contains Info.plist, executable, and index.html
-```
+Language: Choose Vietnamese or English.
 
-`make package` is intended for rootful jailbreaks. For rootless jailbreaks, run `make package THEOS_PACKAGE_SCHEME=rootless` and change the `Architecture` in the `control` file to `iphoneos-arm64` before releasing the rootless package.
+Info: Enter App Name, Bundle ID, number of Tabs, and their URLs.
 
-## IPA for Non-Jailbroken Devices
+Permissions: Choose y/n for Apple permissions. Pay attention to red restricted warnings.
 
-The IPA must be signed with a certificate/provisioning profile that matches the `yourbundleid` bundle identifier. Use the following command on macOS (replace with your actual certificate/profile names):
+Package: Choose DEB or IPA.
 
-```bash
-make ipa \
-  SIGN_IDENTITY="Apple Development: Your Name (TEAMID)" \
-  PROVISIONING_PROFILE="$HOME/Profiles/yourappname.mobileprovision"
-```
-
-The command injects the profile into `embedded.mobileprovision`, signs the `.app`, and then packages `Payload/yourappname.app` into an IPA. Afterward, install it using Xcode Devices and Simulators, Apple Configurator, or via an MDM/Ad Hoc/TestFlight process suited for your profile. It cannot be validly installed on a non-jailbroken device without a valid Apple digital signature.
-
-## Installing the DEB on Jailbroken Devices
-
-Copy the file from `packages/` to your device, then use a package manager like Sileo/Zebra or install it via SSH:
-
-```bash
-scp packages/yourbundleid_1.0.0_iphoneos-arm.deb root@DEVICE_IP:/var/mobile/
-ssh root@DEVICE_IP 'dpkg -i /var/mobile/yourbundleid_1.0.0_iphoneos-arm.deb'
-```
-
-On rootless jailbreaks, use the DEB file built with the `rootless` scheme; do not use the rootful package.
-
-## Replacing Offline HTML
-
-`Resources/index.html` is already a copy of the provided HTML file. To replace it with a new one and build:
-
-```bash
-./build.sh /path-to/index.html
-```
+The generated files (.ipa or .deb) will be saved in the packages/ directory!
 
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
