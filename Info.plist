@@ -2,81 +2,48 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-    <key>CFBundleDevelopmentRegion</key>
-    <string>vi</string>
     <key>CFBundleDisplayName</key>
-    <string>Your App Name</string>
+    <string>Multi WebApp</string>
     <key>CFBundleExecutable</key>
-    <string>Your App Name</string>
+    <string>MultiWebApp</string>
     <key>CFBundleIdentifier</key>
-    <string>Your Bundle Id</string>
-    <key>CFBundleInfoDictionaryVersion</key>
-    <string>6.0</string>
+    <string>com.github.multiwebapp</string>
     <key>CFBundleName</key>
-    <string>Your App Name</string>
-    <key>CFBundlePackageType</key>
-    <string>APPL</string>
-    <key>CFBundleSupportedPlatforms</key>
-    <array>
-        <string>iPhoneOS</string>
-    </array>
-    <key>UILaunchStoryboardName</key>
-    <string>LaunchScreen</string>
+    <string>MultiWebApp</string>
     <key>CFBundleShortVersionString</key>
     <string>1.0.0</string>
     <key>CFBundleVersion</key>
-    <string>1</string>
-    <key>LSRequiresIPhoneOS</key>
-    <true/>
+    <string>1.0.0</string>
     <key>MinimumOSVersion</key>
-    <string>13.0</string>
-    <key>NSAppTransportSecurity</key>
+    <string>14.0</string>
+    
+    <!-- Cấu hình hỗ trợ đổi Icon App từ Settings -->
+    <key>CFBundleIcons</key>
     <dict>
-        <key>NSAllowsArbitraryLoadsInWebContent</key>
-        <true/>
+        <key>CFBundlePrimaryIcon</key>
+        <dict>
+            <key>CFBundleIconFiles</key>
+            <array>
+                <string>app_icon.png</string>
+            </array>
+            <key>UIPrerenderedIcon</key>
+            <false/>
+        </dict>
+        <key>CFBundleAlternateIcons</key>
+        <dict/>
     </dict>
-    <key>NSCameraUsageDescription</key>
-    <string>Your Descripton to Request</string>
-    <key>NSMicrophoneUsageDescription</key>
-    <string>Your Descripton to Request</string>
-    <key>NSPhotoLibraryUsageDescription</key>
-    <string>Your Descripton to Request</string>
-    <key>NSPhotoLibraryAddUsageDescription</key>
-    <string>Your Descripton to Request</string>
-    <key>UIFileSharingEnabled</key>
-    <true/>
-    <key>CFBundleIconFiles</key>
+
+    <key>UILaunchStoryboardName</key>
+    <string>LaunchScreen</string>
+    <key>UIRequiredDeviceCapabilities</key>
     <array>
-        <string>app_icon.pn g</string>
-        <string>app_icon.jpg</string>
-        <string>app_icon.jpeg</string>
-        <string>app_icon.webp</string>
-        <string>app_icon.bmp</string>
-        <string>app_icon.gif</string>
+        <string>arm64</string>
     </array>
-    <key>UIDeviceFamily</key>
-    <array>
-        <integer>1</integer>
-        <integer>2</integer>
-    </array>
-    <key>UIRequiresFullScreen</key>
-    <true/>
     <key>UISupportedInterfaceOrientations</key>
     <array>
         <string>UIInterfaceOrientationPortrait</string>
         <string>UIInterfaceOrientationLandscapeLeft</string>
         <string>UIInterfaceOrientationLandscapeRight</string>
-    </array>
-    <key>UISupportedInterfaceOrientations~ipad</key>
-    <array>
-        <string>UIInterfaceOrientationPortrait</string>
-        <string>UIInterfaceOrientationPortraitUpsideDown</string>
-        <string>UIInterfaceOrientationLandscapeLeft</string>
-        <string>UIInterfaceOrientationLandscapeRight</string>
-    </array>
-    <key>WKAppBoundDomains</key>
-    <array>
-        <string>your website link but dont need https://</string>
     </array>
 </dict>
 </plist>
